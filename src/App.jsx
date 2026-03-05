@@ -12,11 +12,141 @@ import {
   Loader2,
   Tag,
   Square,
-  ChevronDown
+  ChevronDown,
+  X,
+  MapPin,
+  Stethoscope
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTY4enw_CNuDrGT7PzL3ci9LDtCbfbLIZJl--zgUbKIRmbQuSLN8lZ64aN0RZmxTQyhMC5AKL5DU46m/pub?gid=0&single=true&output=csv';
+
+// --- ENHANCED ITEM INFORMATION ---
+const getEnhancedInfo = (item) => {
+  const name = (item.name || '').toLowerCase();
+  const id = (item.id || '').toLowerCase();
+  const cat = item.category || '';
+
+  // Bundles
+  if (id.includes('bundle')) return {
+    title: item.name,
+    what: "Discounted, all-inclusive packages designed to provide young pets with their full series of exams, core vaccinations, and essential diagnostic screenings.",
+    why: "Bundling these services ensures your pet stays on a strict medical schedule during their most vulnerable developmental stage while providing you with significant savings.",
+    austin: "Central Texas has a high exposure rate for infectious diseases due to our year-round outdoor lifestyle. Establishing strong immunity early is the best way to protect your new family member before they hit the trails or parks."
+  };
+
+  // Exams
+  if (name.includes('exam') || name.includes('consult')) return {
+    title: item.name,
+    what: "A comprehensive 'nose-to-tail' physical assessment conducted by a veterinarian.",
+    why: "Because pets age much faster than humans, an annual (or bi-annual) exam is critical for detecting early signs of disease—such as dental issues, heart murmurs, or new growths—that may not be visible at home.",
+    austin: "Keeping a close eye on your pet's health is crucial in Austin, where the intense summer heat and active outdoor lifestyle put extra physical demands on their bodies."
+  };
+
+  // DAP / Distemper Parvo
+  if (name.includes('dap') || name.includes('distemper') || name.includes('parvo')) return {
+    title: item.name,
+    what: "A core vaccine that protects against three major viral diseases: Distemper, Adenovirus (Hepatitis), and Parvovirus.",
+    why: "These diseases are highly contagious and can be fatal, especially Parvovirus, which survives in the environment for long periods. This vaccine is essential for every dog regardless of lifestyle.",
+    austin: "With Austin's massive dog park culture and popular trails (like the Barton Creek Greenbelt), your dog has a high chance of encountering contaminated soil where Parvovirus thrives."
+  };
+
+  // Rabies (handles both Dog and Cat)
+  if (name.includes('rabies')) return {
+    title: item.name,
+    what: name.includes('purevax') ? "A specialized, non-adjuvanted vaccine designed specifically for the safety of cats to prevent Rabies." : "A vaccine that protects against the Rabies virus, which affects the central nervous system.",
+    why: "Rabies is 100% fatal to pets and can be transmitted to humans. Vaccination is not only a top health priority but is strictly required by state and local law.",
+    austin: "Central Texas and the Hill Country have very high populations of bats, skunks, and raccoons—the primary carriers of Rabies. Even indoor-only pets are at risk if a bat accidentally enters the home (a common occurrence in Austin)."
+  };
+
+  // Bordetella
+  if (name.includes('bordetella') || name.includes('kennel')) return {
+    title: item.name,
+    what: "Often called the 'Kennel Cough' vaccine, it protects against the most common bacterial cause of infectious tracheobronchitis.",
+    why: "It prevents harsh, hacking coughs and respiratory infections. This is a core vaccine at our practice, essential for dogs that interact with others.",
+    austin: "An absolute must for Austin's dog-friendly patios, breweries, and busy daycare facilities where respiratory bugs spread rapidly through the air."
+  };
+
+  // Leptospirosis
+  if (name.includes('lepto')) return {
+    title: item.name,
+    what: "A core vaccine against a bacterial infection spread through the urine of wildlife (like raccoons, opossums, or rodents) often found in soil or standing water.",
+    why: "Leptospirosis can cause life-threatening kidney or liver failure. It is also 'zoonotic,' meaning humans can contract the disease from their infected pets.",
+    austin: "Extremely critical in Austin. Dogs easily contract Lepto by drinking from puddles, swimming in Lady Bird Lake or local creeks, or just sniffing areas where urban wildlife frequently travel in backyards."
+  };
+
+  // Canine Influenza
+  if (name.includes('flu') || name.includes('influenza') || name.includes('civ')) return {
+    title: item.name,
+    what: "A vaccine that protects against the highly contagious 'dog flu' (H3N8 and H3N2 strains).",
+    why: "Influenza is a social disease spread through respiratory droplets. It can cause severe coughing, fever, and in some cases, life-threatening pneumonia.",
+    austin: "Flu outbreaks happen frequently in high-density social areas. If your dog visits Austin boarding facilities, groomers, or crowded dog parks, this is highly recommended."
+  };
+
+  // RCP / FVRCP
+  if (name.includes('rcp') || name.includes('fvr')) return {
+    title: item.name,
+    what: "A core feline vaccine protecting against Rhinotracheitis, Calicivirus, and Panleukopenia.",
+    why: "These viruses are highly contagious and cause severe respiratory infections or life-threatening feline distemper (Panleukopenia).",
+    austin: "Even indoor-only cats in Austin should stay current, as you can easily track these hardy viruses into your home on your shoes after walking around your neighborhood."
+  };
+
+  // FeLV (Vaccine)
+  if ((name.includes('leukemia') || name.includes('felv')) && cat === 'Core') return {
+    title: item.name,
+    what: "A vaccine that protects against Feline Leukemia, a virus that weakens a cat's immune system and can cause cancer or severe anemia.",
+    why: "FeLV is spread through close contact, such as grooming, biting, or sharing water bowls. Vaccination is highly recommended for all kittens and any adult cat with outdoor access.",
+    austin: "Austin has a very large free-roaming and community cat population. If your cat ever steps onto the patio or back yard, they are at risk of encountering an infected stray."
+  };
+
+  // Heartworm Combo Lab
+  if ((name.includes('combo') || name.includes('heartworm')) && cat === 'Labwork') return {
+    title: item.name,
+    what: "A blood test combined with a fecal screen to check for heartworms and common intestinal parasites.",
+    why: "Heartworms are transmitted by mosquitoes and cause permanent heart and lung damage. This annual screen ensures your pet is clear of infection before continuing their monthly prevention.",
+    austin: "Because Central Texas rarely gets hard freezes, mosquitoes are a nearly year-round threat. Heartworm disease is highly endemic here, making annual testing and strict year-round prevention absolutely critical."
+  };
+
+  // PCR / Fecal / Intestinal Parasite Screen
+  if ((name.includes('pcr') || name.includes('parasite') || name.includes('fecal')) && cat === 'Labwork') return {
+    title: item.name,
+    what: "A highly advanced diagnostic test that uses PCR (Polymerase Chain Reaction) technology to detect the DNA of specific parasites in a stool sample.",
+    why: "PCR is significantly more sensitive than traditional microscopic screens. It detects parasites like Giardia, Roundworms, Hookworms, and Whipworms even when they aren't actively shedding eggs.",
+    austin: "Austin's warm, humid climate allows intestinal parasites to survive and thrive year-round in the soil of our parks, trails, and even your own backyard."
+  };
+
+  // FIV/FeLV Lab
+  if ((id.includes('fiv') || name.includes('fiv')) && cat === 'Labwork') return {
+    title: item.name,
+    what: "A rapid blood test that screens for Feline Leukemia Virus (FeLV) and Feline Immunodeficiency Virus (FIV).",
+    why: "These viruses can be passed from a mother cat to her kittens or through social contact. Testing is essential to understand your cat's health status and ensure they receive appropriate care.",
+    austin: "Knowing your cat's status helps protect them and the large local feline community in Travis County."
+  };
+
+  // Adult Wellness Labwork
+  if (id.includes('adult') && cat === 'Labwork') return {
+    title: item.name,
+    what: "A blood panel (CBC and Chemistry) and urinalysis that checks organ function, including the kidneys, liver, and blood sugar levels.",
+    why: "These tests provide a 'window' inside the body, allowing us to establish a healthy baseline and catch metabolic changes long before your pet acts or feels sick.",
+    austin: null
+  };
+
+  // Senior Wellness Labwork
+  if (id.includes('senior') && cat === 'Labwork') return {
+    title: item.name,
+    what: "Our most comprehensive diagnostic screen, including a Complete Blood Cell Count (CBC), expanded organ chemistries, thyroid (T4) testing, urinalysis, and an intestinal parasite screen.",
+    why: "As pets age, the risk of 'hidden' diseases like kidney disease, hyperthyroidism, or diabetes increases. This panel checks much more than standard screens to catch issues early when they are most manageable.",
+    austin: null
+  };
+
+  // Fallback
+  return {
+    title: item.name,
+    what: item.description || "Information about this recommended service.",
+    why: null,
+    austin: null
+  };
+};
 
 // --- UTILITIES ---
 const parseCSV = (text) => {
@@ -120,11 +250,23 @@ export default function App() {
     grooming: false, 
   });
   const [labPreference, setLabPreference] = useState('comprehensive'); 
-  const [expandedItem, setExpandedItem] = useState(null);
+  
+  // Changed from expandedItem string to modalItem object
+  const [modalItem, setModalItem] = useState(null);
   
   const [declinedItems, setDeclinedItems] = useState([]);
   const [selectedLabId, setSelectedLabId] = useState(null);
   const [selectedRabiesId, setSelectedRabiesId] = useState(null);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (modalItem) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => { document.body.style.overflow = 'auto'; };
+  }, [modalItem]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -142,14 +284,6 @@ export default function App() {
       }
     };
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (window.tailwindcss) return;
-    const script = document.createElement('script');
-    script.src = "https://cdn.tailwindcss.com";
-    script.async = true;
-    document.head.appendChild(script);
   }, []);
 
   const getMatchesSpecies = (item, currentSpecies) => {
@@ -443,20 +577,76 @@ export default function App() {
     setDeclinedItems(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
-  const isItemBundled = (item) => {
-    if (!activeBundle) return false;
-    const type = getItemType(item);
-    
-    const isPuppyBundleActive = recommendations.some(r => r.id === BUNDLE_PUPPY_ID && !declinedItems.includes(r.id));
-    const isKittenBundleActive = recommendations.some(r => r.id === BUNDLE_KITTEN_ID && !declinedItems.includes(r.id));
-    
-    if (activeBundle === 'full') {
-        if (isPuppyBundleActive) return ['exam', 'puppy_vax', 'basic_lab'].includes(type);
-        if (isKittenBundleActive) return ['exam', 'kitten_vax', 'basic_lab'].includes(type);
-        return ['exam', 'core_vaccine', 'basic_lab', 'comp_lab'].includes(type);
-    }
-    if (activeBundle === 'basic') return ['exam', 'basic_lab', 'comp_lab'].includes(type);
-    return false;
+  // Render Modal Information
+  const renderModal = () => {
+    if (!modalItem) return null;
+    const info = getEnhancedInfo(modalItem);
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+        {/* Background Overlay */}
+        <div 
+          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
+          onClick={() => setModalItem(null)}
+        />
+        
+        {/* Modal Box */}
+        <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
+            <div>
+              <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wide mb-2 inline-block">
+                {modalItem.category}
+              </span>
+              <h3 className="text-xl font-bold text-slate-800 leading-tight pr-4">
+                {info.title}
+              </h3>
+            </div>
+            <button 
+              onClick={() => setModalItem(null)}
+              className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 rounded-full transition-colors self-start"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Content Body */}
+          <div className="p-5 sm:p-6 overflow-y-auto space-y-6 text-slate-700 leading-relaxed">
+            {/* What it is */}
+            <div>
+              <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-2 text-base">
+                <Stethoscope size={18} className="text-blue-500" />
+                What it is
+              </h4>
+              <p className="text-sm">{info.what}</p>
+            </div>
+
+            {/* Why it's important */}
+            {info.why && (
+              <div>
+                <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-2 text-base">
+                  <ShieldAlert size={18} className="text-blue-500" />
+                  Why it's important
+                </h4>
+                <p className="text-sm">{info.why}</p>
+              </div>
+            )}
+
+            {/* Austin Context */}
+            {info.austin && (
+              <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl">
+                <h4 className="flex items-center gap-2 font-bold text-orange-800 mb-2 text-sm">
+                  <MapPin size={16} className="text-orange-500" />
+                  Why this matters in Austin
+                </h4>
+                <p className="text-sm text-orange-900 leading-relaxed">{info.austin}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) return (
@@ -476,6 +666,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
+      
+      {/* RENDER MODAL */}
+      {renderModal()}
+
       <header className="bg-blue-600 text-white p-6 shadow-lg">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-2xl font-bold flex items-center gap-2"><Heart className="fill-blue-400 text-blue-100" /> Bluebonnet Animal Hospital</h1>
@@ -618,7 +812,7 @@ export default function App() {
                       
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
-                          <div className="flex-1 cursor-pointer" onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}>
+                          <div className="flex-1 cursor-pointer" onClick={() => setModalItem(item)}>
                              <span className={`font-medium ${isDeclined ? ((item.id === BUNDLE_ITEM_ID || item.id === BUNDLE_PUPPY_ID || item.id === BUNDLE_KITTEN_ID) ? 'text-slate-400' : 'text-slate-500 line-through') : 'text-slate-800'}`}>
                                {item.name}
                              </span>
@@ -676,18 +870,12 @@ export default function App() {
                              )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-1 cursor-pointer" onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}>
+                        <div className="flex items-center gap-2 mt-1 cursor-pointer" onClick={() => setModalItem(item)}>
                           <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-wide">{item.category}</span>
-                          <div className="text-[10px] text-slate-500 flex items-center gap-1"><Info size={10} /> {isDeclined ? 'Declined' : 'More Info'}</div>
+                          <div className="text-[10px] text-slate-500 flex items-center gap-1 hover:text-blue-600 transition-colors"><Info size={12} /> {isDeclined ? 'Declined (Click for Info)' : 'More Info'}</div>
                         </div>
                       </div>
                     </div>
-                    {expandedItem === item.id && (
-                      <div className="bg-blue-50 px-4 py-3 ml-14 mr-4 mb-4 rounded-lg text-sm text-slate-700 border border-blue-100 animate-in fade-in slide-in-from-top-1">
-                        <p>{item.description}</p>
-                        {item.trigger_tag === 'outside' && item.species === 'dog' && <div className="mt-2 text-xs bg-white p-2 rounded border border-blue-100"><strong>Note:</strong> Leptospirosis is zoonotic, meaning it can spread from pets to humans.</div>}
-                      </div>
-                    )}
                   </div>
                 );
               })
