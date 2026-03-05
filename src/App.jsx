@@ -15,7 +15,8 @@ import {
   ChevronDown,
   X,
   MapPin,
-  Stethoscope
+  Stethoscope,
+  PawPrint
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -251,7 +252,6 @@ export default function App() {
   });
   const [labPreference, setLabPreference] = useState('comprehensive'); 
   
-  // Changed from expandedItem string to modalItem object
   const [modalItem, setModalItem] = useState(null);
   
   const [declinedItems, setDeclinedItems] = useState([]);
@@ -285,6 +285,8 @@ export default function App() {
     };
     fetchData();
   }, []);
+
+  // Removed inline tailwindcss script loading because it is now handled in index.html
 
   const getMatchesSpecies = (item, currentSpecies) => {
     const itemSpeciesRaw = (item.species || '').toLowerCase();
@@ -470,6 +472,7 @@ export default function App() {
        recs = recs.concat(labItems.filter(s => s.trigger_tag === 'senior' || s.trigger_tag === 'comprehensive'));
     }
     
+    // Adult Bundle Item Row
     const bundleRow = services.find(s => s.id === BUNDLE_ITEM_ID && matchesSpecies(s) && matchesLifeStage(s));
     if (bundleRow && !isPuppy) recs.push(bundleRow);
 
@@ -870,10 +873,25 @@ export default function App() {
                              )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-1 cursor-pointer" onClick={() => setModalItem(item)}>
-                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-wide">{item.category}</span>
-                          <div className="text-[10px] text-slate-500 flex items-center gap-1 hover:text-blue-600 transition-colors"><Info size={12} /> {isDeclined ? 'Declined (Click for Info)' : 'More Info'}</div>
+
+                        {/* ENHANCED "MORE INFO" BUTTON */}
+                        <div className="flex items-center gap-3 mt-3 mb-1">
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200 uppercase tracking-wider">
+                            {item.category}
+                          </span>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setModalItem(item); }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none ${
+                              isDeclined 
+                                ? 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200' 
+                                : 'bg-gradient-to-r from-blue-50 to-indigo-50 text-indigo-700 hover:from-blue-100 hover:to-indigo-100 border border-indigo-100 hover:-translate-y-0.5'
+                            }`}
+                          >
+                            <PawPrint size={14} className={isDeclined ? "text-slate-400" : "text-indigo-500"} /> 
+                            {isDeclined ? 'Why do I need this?' : "The 'why' behind it"}
+                          </button>
                         </div>
+
                       </div>
                     </div>
                   </div>
