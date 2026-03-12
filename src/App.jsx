@@ -16,14 +16,16 @@ import {
   X,
   MapPin,
   Stethoscope,
-  PawPrint
+  PawPrint,
+  Clock,
+  Smartphone
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTY4enw_CNuDrGT7PzL3ci9LDtCbfbLIZJl--zgUbKIRmbQuSLN8lZ64aN0RZmxTQyhMC5AKL5DU46m/pub?gid=0&single=true&output=csv';
 
 // --- ENHANCED ITEM INFORMATION ---
-const getEnhancedInfo = (item) => {
+const getEnhancedInfo = (item, species, lifeStage) => {
   const name = (item.name || '').toLowerCase();
   const id = (item.id || '').toLowerCase();
   const cat = item.category || '';
@@ -41,7 +43,9 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: "A comprehensive 'nose-to-tail' physical assessment conducted by a veterinarian.",
     why: "Because pets age much faster than humans, an annual (or bi-annual) exam is critical for detecting early signs of disease—such as dental issues, heart murmurs, or new growths—that may not be visible at home.",
-    austin: "Keeping a close eye on your pet's health is crucial in Austin, where the intense summer heat and active outdoor lifestyle put extra physical demands on their bodies."
+    austin: species === 'cat' 
+      ? "Since cats are notorious for hiding subtle symptoms of disease, the regular exam can allow immediate intervention if abnormal changes occur."
+      : "Keeping a close eye on your pet's health is crucial in Austin, where the intense summer heat and active outdoor lifestyle put extra physical demands on their bodies."
   };
 
   // DAP / Distemper Parvo
@@ -49,7 +53,8 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: "A core vaccine that protects against three major viral diseases: Distemper, Adenovirus (Hepatitis), and Parvovirus.",
     why: "These diseases are highly contagious and can be fatal, especially Parvovirus, which survives in the environment for long periods. This vaccine is essential for every dog regardless of lifestyle.",
-    austin: "With Austin's massive dog park culture and popular trails (like the Barton Creek Greenbelt), your dog has a high chance of encountering contaminated soil where Parvovirus thrives."
+    austin: "With Austin's massive dog park culture and popular trails (like the Barton Creek Greenbelt), your dog has a high chance of encountering contaminated soil where Parvovirus thrives.",
+    frequency: lifeStage === 'puppy' ? "Every 3-4 weeks until >16 weeks, then at the first annual appointment, then every 3 years thereafter." : "Every 3 years."
   };
 
   // Rabies (handles both Dog and Cat)
@@ -57,7 +62,14 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: name.includes('purevax') ? "A specialized, non-adjuvanted vaccine designed specifically for the safety of cats to prevent Rabies." : "A vaccine that protects against the Rabies virus, which affects the central nervous system.",
     why: "Rabies is 100% fatal to pets and can be transmitted to humans. Vaccination is not only a top health priority but is strictly required by state and local law.",
-    austin: "Central Texas and the Hill Country have very high populations of bats, skunks, and raccoons—the primary carriers of Rabies. Even indoor-only pets are at risk if a bat accidentally enters the home (a common occurrence in Austin)."
+    austin: "Central Texas and the Hill Country have very high populations of bats, skunks, and raccoons—the primary carriers of Rabies. Even indoor-only pets are at risk if a bat accidentally enters the home (a common occurrence in Austin).",
+    frequency: species === 'cat' 
+      ? (lifeStage === 'puppy' 
+          ? "Given after 12wks of age and then at the first annual appointment, then every 1-3 years, depending on the formulation of the vaccine given (available in 1yr and 3yr formulations)." 
+          : "PureVax formulations come in 1-year and 3-year options. Given every 1 or 3 years if previous vaccine was on schedule.")
+      : (lifeStage === 'puppy'
+          ? "Given after 12wks of age, then at the first annual appointment, then every 3 years thereafter if rabies is given on schedule."
+          : "Every 3 years if previous rabies vaccine was on schedule.")
   };
 
   // Bordetella
@@ -65,7 +77,8 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: "Often called the 'Kennel Cough' vaccine, it protects against the most common bacterial cause of infectious tracheobronchitis.",
     why: "It prevents harsh, hacking coughs and respiratory infections. This is a core vaccine at our practice, essential for dogs that interact with others.",
-    austin: "An absolute must for Austin's dog-friendly patios, breweries, and busy daycare facilities where respiratory bugs spread rapidly through the air."
+    austin: "An absolute must for Austin's dog-friendly patios, breweries, and busy daycare facilities where respiratory bugs spread rapidly through the air.",
+    frequency: "Intranasal vaccine given every 1 year."
   };
 
   // Leptospirosis
@@ -73,7 +86,8 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: "A core vaccine against a bacterial infection spread through the urine of wildlife (like raccoons, opossums, or rodents) often found in soil or standing water.",
     why: "Leptospirosis can cause life-threatening kidney or liver failure. It is also 'zoonotic,' meaning humans can contract the disease from their infected pets.",
-    austin: "Extremely critical in Austin. Dogs easily contract Lepto by drinking from puddles, swimming in Lady Bird Lake or local creeks, or just sniffing areas where urban wildlife frequently travel in backyards."
+    austin: "Extremely critical in Austin. Dogs easily contract Lepto by drinking from puddles, swimming in Lady Bird Lake or local creeks, or just sniffing areas where urban wildlife frequently travel in backyards.",
+    frequency: "Every 1 year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later)."
   };
 
   // Canine Influenza
@@ -81,7 +95,8 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: "A vaccine that protects against the highly contagious 'dog flu' (H3N8 and H3N2 strains).",
     why: "Influenza is a social disease spread through respiratory droplets. It can cause severe coughing, fever, and in some cases, life-threatening pneumonia.",
-    austin: "Flu outbreaks happen frequently in high-density social areas. If your dog visits Austin boarding facilities, groomers, or crowded dog parks, this is highly recommended."
+    austin: "Flu outbreaks happen frequently in high-density social areas. If your dog visits Austin boarding facilities, groomers, or crowded dog parks, this is highly recommended.",
+    frequency: "Annually after initial 2 booster series 4 weeks apart."
   };
 
   // RCP / FVRCP
@@ -89,7 +104,8 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: "A core feline vaccine protecting against Rhinotracheitis, Calicivirus, and Panleukopenia.",
     why: "These viruses are highly contagious and cause severe respiratory infections or life-threatening feline distemper (Panleukopenia).",
-    austin: "Even indoor-only cats in Austin should stay current, as you can easily track these hardy viruses into your home on your shoes after walking around your neighborhood."
+    austin: "Even indoor-only cats in Austin should stay current, as you can easily track these hardy viruses into your home on your shoes after walking around your neighborhood.",
+    frequency: lifeStage === 'puppy' ? "Boosted every 4 weeks until >16 weeks old, then every 3 years." : "Administered every 3 years, if given on schedule."
   };
 
   // FeLV (Vaccine)
@@ -97,7 +113,8 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: "A vaccine that protects against Feline Leukemia, a virus that weakens a cat's immune system and can cause cancer or severe anemia.",
     why: "FeLV is spread through close contact, such as grooming, biting, or sharing water bowls. Vaccination is highly recommended for all kittens and any adult cat with outdoor access.",
-    austin: "Austin has a very large free-roaming and community cat population. If your cat ever steps onto the patio or back yard, they are at risk of encountering an infected stray."
+    austin: "Austin has a very large free-roaming and community cat population. If your cat ever steps onto the patio or back yard, they are at risk of encountering an infected stray.",
+    frequency: lifeStage === 'puppy' ? "Two doses are given 3-4 weeks apart, then every 1-2 years based on lifestyle." : "Every 1-2 years based on lifestyle (Unless it is the first time given, in which case it is boosted 4 weeks later)."
   };
 
   // Heartworm Combo Lab
@@ -105,7 +122,8 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: "A blood test combined with a fecal screen to check for heartworms and common intestinal parasites.",
     why: "Heartworms are transmitted by mosquitoes and cause permanent heart and lung damage. This annual screen ensures your pet is clear of infection before continuing their monthly prevention.",
-    austin: "Because Central Texas rarely gets hard freezes, mosquitoes are a nearly year-round threat. Heartworm disease is highly endemic here, making annual testing and strict year-round prevention absolutely critical."
+    austin: "Because Central Texas rarely gets hard freezes, mosquitoes are a nearly year-round threat. Heartworm disease is highly endemic here, making annual testing and strict year-round prevention absolutely critical.",
+    frequency: "Screened every year."
   };
 
   // PCR / Fecal / Intestinal Parasite Screen
@@ -113,7 +131,8 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: "A highly advanced diagnostic test that uses PCR (Polymerase Chain Reaction) technology to detect the DNA of specific parasites in a stool sample.",
     why: "PCR is significantly more sensitive than traditional microscopic screens. It detects parasites like Giardia, Roundworms, Hookworms, and Whipworms even when they aren't actively shedding eggs.",
-    austin: "Austin's warm, humid climate allows intestinal parasites to survive and thrive year-round in the soil of our parks, trails, and even your own backyard."
+    austin: "Austin's warm, humid climate allows intestinal parasites to survive and thrive year-round in the soil of our parks, trails, and even your own backyard.",
+    frequency: "Screened every year."
   };
 
   // FIV/FeLV Lab
@@ -121,7 +140,8 @@ const getEnhancedInfo = (item) => {
     title: item.name,
     what: "A rapid blood test that screens for Feline Leukemia Virus (FeLV) and Feline Immunodeficiency Virus (FIV).",
     why: "These viruses can be passed from a mother cat to her kittens or through social contact. Testing is essential to understand your cat's health status and ensure they receive appropriate care.",
-    austin: "Knowing your cat's status helps protect them and the large local feline community in Travis County."
+    austin: "Knowing your cat's status helps protect them and the large local feline community in Travis County.",
+    frequency: "Performed once as a kitten, and then recommended annually based on lifestyle."
   };
 
   // Adult Wellness Labwork
@@ -285,8 +305,6 @@ export default function App() {
     };
     fetchData();
   }, []);
-
-  // Removed inline tailwindcss script loading because it is now handled in index.html
 
   const getMatchesSpecies = (item, currentSpecies) => {
     const itemSpeciesRaw = (item.species || '').toLowerCase();
@@ -576,14 +594,27 @@ export default function App() {
   
   const toggleItemDecline = (id) => {
     const item = recommendations.find(r => r.id === id);
-    if (getItemType(item) === 'exam') return; 
+    if (!item) return;
+    const itemType = getItemType(item);
+    
+    // Prevent declining exam OR comprehensive labwork (when "Best Medicine" is selected)
+    const isUndeniable = itemType === 'exam' || (labPreference === 'comprehensive' && item.category === 'Labwork' && lifeStage !== 'puppy');
+    if (isUndeniable) return; 
+
     setDeclinedItems(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
   // Render Modal Information
   const renderModal = () => {
     if (!modalItem) return null;
-    const info = getEnhancedInfo(modalItem);
+    const info = getEnhancedInfo(modalItem, species, lifeStage);
+    
+    // Dynamically update modal category label
+    const mItemType = getItemType(modalItem);
+    const mIconType = getIconType(modalItem);
+    let modalDisplayCategory = modalItem.category;
+    if (mItemType === 'exam') modalDisplayCategory = 'Required';
+    else if (mIconType === 'vaccine') modalDisplayCategory = 'Vaccine';
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
@@ -600,7 +631,7 @@ export default function App() {
           <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
             <div>
               <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wide mb-2 inline-block">
-                {modalItem.category}
+                {modalDisplayCategory}
               </span>
               <h3 className="text-xl font-bold text-slate-800 leading-tight pr-4">
                 {info.title}
@@ -624,6 +655,17 @@ export default function App() {
               </h4>
               <p className="text-sm">{info.what}</p>
             </div>
+
+            {/* Frequency (New!) */}
+            {info.frequency && (
+              <div>
+                <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-2 text-base">
+                  <Clock size={18} className="text-blue-500" />
+                  How often is it given?
+                </h4>
+                <p className="text-sm">{info.frequency}</p>
+              </div>
+            )}
 
             {/* Why it's important */}
             {info.why && (
@@ -673,30 +715,48 @@ export default function App() {
       {/* RENDER MODAL */}
       {renderModal()}
 
-      <header className="bg-blue-600 text-white p-6 shadow-lg">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Heart className="fill-blue-400 text-blue-100" /> Bluebonnet Animal Hospital</h1>
-          <p className="text-blue-100 text-sm mt-1">Wellness Visit Navigator</p>
+      <header className="bg-blue-600 text-white pt-6 pb-5 px-6 shadow-lg relative overflow-hidden">
+        {/* Subtle decorative background pattern */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+        
+        <div className="max-w-2xl mx-auto flex flex-col items-center sm:items-start text-center sm:text-left relative z-10">
+          <div className="bg-white px-4 py-3 rounded-2xl shadow-md mb-4 flex items-center justify-center border border-blue-400/30">
+             {/* Uses the uploaded logo from the public folder */}
+             <img src="/Bluebonnet-Logo.jpg" alt="Bluebonnet Animal Hospital" className="h-10 sm:h-14 object-contain" />
+          </div>
+          <div className="flex items-center justify-center sm:justify-start gap-2.5">
+            <PawPrint className="fill-blue-400 text-blue-200 opacity-90" size={22} />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-white drop-shadow-sm">
+              Wellness Visit Navigator
+            </h1>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto p-4 space-y-6">
+      <main className="max-w-2xl mx-auto p-4 space-y-6 mt-2">
         <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
           <h2 className="text-lg font-semibold mb-4 text-slate-700 flex items-center gap-2"><Activity size={20} className="text-blue-500"/> 1. Pet Profile</h2>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          
+          <div className="grid grid-cols-2 gap-4 mb-6">
             <button onClick={() => setSpecies('dog')} className={`p-4 rounded-lg border-2 flex flex-col items-center gap-2 transition-all ${species === 'dog' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 hover:border-slate-300'}`}><Dog size={32} /><span className="font-medium">Dog</span></button>
             <button onClick={() => setSpecies('cat')} className={`p-4 rounded-lg border-2 flex flex-col items-center gap-2 transition-all ${species === 'cat' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 hover:border-slate-300'}`}><Cat size={32} /><span className="font-medium">Cat</span></button>
           </div>
-          <div className="flex bg-slate-100 p-1 rounded-lg">
+          
+          <div className="grid grid-cols-3 gap-3">
             {['puppy', 'adult', 'senior'].map((stage) => (
-              <div key={stage} className="flex-1 relative group">
-                <button onClick={() => setLifeStage(stage)} className={`w-full py-2 rounded-md text-sm font-medium capitalize transition-all ${lifeStage === stage ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>
+              <div key={stage} className="flex flex-col">
+                <button 
+                  onClick={() => setLifeStage(stage)} 
+                  className={`w-full py-2.5 rounded-lg text-sm font-bold capitalize transition-all border-2 ${
+                    lifeStage === stage 
+                      ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' 
+                      : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
                   {stage === 'puppy' ? (species === 'cat' ? 'Kitten' : 'Puppy') : stage}
                 </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-800 text-white text-xs rounded-lg py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20 shadow-xl text-center">
-                  <div className="font-semibold mb-1 text-slate-300 border-b border-slate-600 pb-1">Typical Age Range</div>
-                  <div className="whitespace-pre-line leading-relaxed">{LIFE_STAGE_TOOLTIPS[species][stage]}</div>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                <div className="text-[11px] text-slate-500 text-center whitespace-pre-line leading-relaxed mt-2 px-1 font-medium">
+                  {LIFE_STAGE_TOOLTIPS[species][stage]}
                 </div>
               </div>
             ))}
@@ -724,8 +784,8 @@ export default function App() {
             <div className="mt-6 pt-6 border-t border-slate-100">
                 <h3 className="text-sm font-semibold mb-2">Labwork Preference</h3>
                 <div className="flex gap-2">
-                <button onClick={() => setLabPreference('basic')} className={`flex-1 px-3 py-2 text-sm border rounded-lg ${labPreference === 'basic' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-slate-200'}`}>Essential</button>
-                <button onClick={() => setLabPreference('comprehensive')} className={`flex-1 px-3 py-2 text-sm border rounded-lg ${labPreference === 'comprehensive' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-slate-200'}`}>Best Medicine (Recommended)</button>
+                <button onClick={() => setLabPreference('basic')} className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${labPreference === 'basic' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Essential</button>
+                <button onClick={() => setLabPreference('comprehensive')} className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${labPreference === 'comprehensive' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Best Medicine (Recommended)</button>
                 </div>
             </div>
           )}
@@ -733,7 +793,7 @@ export default function App() {
         )}
 
         <section className="bg-white rounded-xl shadow-lg border border-blue-100 overflow-hidden">
-          <div className="bg-slate-800 text-white p-4 sticky top-0 z-10">
+          <div className="bg-slate-800 text-white p-4 sticky top-0 z-10 shadow-sm">
             <div className="flex justify-between items-center mb-1">
               <h2 className="font-semibold flex items-center gap-2"><Calculator size={18} /> Estimated Visit</h2>
               <div className="text-right">
@@ -749,7 +809,7 @@ export default function App() {
             </div>
             {activeBundle && (
                <div className="flex justify-end">
-                 <span className="text-xs font-semibold bg-green-500/20 text-green-300 px-2 py-0.5 rounded flex items-center gap-1">
+                 <span className="text-xs font-semibold bg-green-500/20 text-green-300 px-2 py-0.5 rounded flex items-center gap-1 mt-1">
                    <Tag size={10} /> 
                    {activeBundle === 'full' 
                       ? (lifeStage === 'puppy' ? (species === 'cat' ? 'Kitten Bundle Applied' : 'Puppy Bundle Applied') : 'Wellness Bundle Applied') 
@@ -788,25 +848,34 @@ export default function App() {
                 
                 const isBasicLabInComp = !isPuppyBundleActive && !isKittenBundleActive && hasCompLabSelected && itemType === 'basic_lab';
 
+                // Category renaming logic for UI display
+                let displayCategory = item.category;
+                if (itemType === 'exam') displayCategory = 'Required';
+                else if (iconType === 'vaccine') displayCategory = 'Vaccine';
+
+                // Prevent declining Exam OR Comprehensive labwork
+                const isUndeniable = itemType === 'exam' || (labPreference === 'comprehensive' && item.category === 'Labwork' && lifeStage !== 'puppy');
+
+                // Increased left padding logic for bundle items
                 return (
-                  <div key={item.id} className={`group transition-all hover:bg-slate-50 ${isDeclined ? 'opacity-50 grayscale' : ''}`}>
-                    <div className="p-4 flex justify-between items-start gap-3">
+                  <div key={item.id} className={`group transition-all duration-300 border-l-4 ${isDeclined ? 'opacity-50 grayscale' : ''} ${isIncluded ? 'border-indigo-400 bg-indigo-50/30 pl-10 shadow-inner' : 'border-transparent pl-4 hover:bg-slate-50'}`}>
+                    <div className="pr-4 py-4 flex justify-between items-start gap-3">
                       
                       <button 
                         onClick={(e) => { e.stopPropagation(); toggleItemDecline(item.id); }} 
-                        className={`mt-1 focus:outline-none relative group ${itemType === 'exam' ? 'cursor-not-allowed' : 'hover:text-blue-600'}`}
-                        disabled={itemType === 'exam'}
+                        className={`mt-1 focus:outline-none relative group ${isUndeniable ? 'cursor-not-allowed' : 'hover:text-blue-600'}`}
+                        disabled={isUndeniable}
                       >
                         {isDeclined ? (
                            <Square size={20} className="text-slate-400" />
                         ) : (
-                           <div className={`rounded text-white ${itemType === 'exam' ? 'bg-slate-300' : 'bg-blue-600'}`}>
+                           <div className={`rounded text-white ${isUndeniable ? 'bg-slate-300' : 'bg-blue-600'}`}>
                              <Check size={20} />
                            </div>
                         )}
                         
                         <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-max px-2 py-1 bg-slate-800 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
-                          {itemType === 'exam' ? "Required Item" : (isDeclined ? "Re-add to Visit" : "Decline Service")}
+                          {isUndeniable ? (itemType === 'exam' ? "Required Item" : "Best Medicine Standard") : (isDeclined ? "Re-add to Visit" : "Decline Service")}
                           <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-800"></div>
                         </div>
                       </button>
@@ -820,7 +889,7 @@ export default function App() {
                                {item.name}
                              </span>
                              {(isIncluded || (isBasicLabInComp && !isDeclined)) && (
-                               <div className="text-[10px] text-green-600 font-bold flex items-center gap-1 mt-0.5">
+                               <div className="text-[10px] text-indigo-600 font-bold flex items-center gap-1 mt-0.5">
                                  <Check size={10} /> {(isIncluded) ? 'Included in Bundle' : 'Included with Panel'}
                                </div>
                              )}
@@ -831,7 +900,7 @@ export default function App() {
                                {((item.id === BUNDLE_PUPPY_ID || item.id === BUNDLE_KITTEN_ID) && !isDeclined || (item.id !== BUNDLE_ITEM_ID && item.id !== BUNDLE_PUPPY_ID && item.id !== BUNDLE_KITTEN_ID && !isDeclined && (isIncluded || isBasicLabInComp || (isBundleActive && item.itemized_price > item.price)))) && (
                                  <span className="text-[10px] text-slate-400 line-through italic">${item.itemized_price.toFixed(2)}</span>
                                )}
-                               <span className={`font-semibold block ${isIncluded || (isBasicLabInComp && !isDeclined) ? 'text-green-600' : 'text-slate-700'}`}>
+                               <span className={`font-semibold block ${isIncluded || (isBasicLabInComp && !isDeclined) ? 'text-indigo-600' : 'text-slate-700'}`}>
                                  {isIncluded || (isBasicLabInComp && !isDeclined) ? 'Included' : 
                                   ((item.id === BUNDLE_ITEM_ID || item.id === BUNDLE_PUPPY_ID || item.id === BUNDLE_KITTEN_ID) && isDeclined) ? '$0.00' :
                                   `$${(isBundleActive && !isDeclined ? item.price : item.itemized_price).toFixed(2)}`}
@@ -877,7 +946,7 @@ export default function App() {
                         {/* ENHANCED "MORE INFO" BUTTON */}
                         <div className="flex items-center gap-3 mt-3 mb-1">
                           <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200 uppercase tracking-wider">
-                            {item.category}
+                            {displayCategory}
                           </span>
                           <button 
                             onClick={(e) => { e.stopPropagation(); setModalItem(item); }}
@@ -901,6 +970,28 @@ export default function App() {
           </div>
           <div className="p-4 bg-slate-50 border-t border-slate-200"><p className="text-[10px] text-slate-500 text-center">*Prices are estimates only. Medications and prevention products are calculated separately based on weight.</p></div>
         </section>
+
+        {/* --- APP DOWNLOAD BANNER --- */}
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row items-center text-center sm:text-left gap-6 mt-6">
+          <div className="bg-blue-100 p-4 rounded-full text-blue-600 shrink-0">
+            <Smartphone size={32} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-slate-800 mb-1">Unsure about your pet's vaccine status?</h3>
+            <p className="text-sm text-slate-600">
+              View your pet's full medical profile, upcoming reminders, and appointment history securely on our app.
+            </p>
+          </div>
+          <a 
+            href="https://bluebonnetah.com/download-our-app/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 hover:shadow-lg transition-all flex items-center gap-2 whitespace-nowrap"
+          >
+            Download App
+          </a>
+        </section>
+
       </main>
     </div>
   );
