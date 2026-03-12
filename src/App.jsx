@@ -721,8 +721,8 @@ export default function App() {
         
         <div className="max-w-2xl mx-auto flex flex-col items-center sm:items-start text-center sm:text-left relative z-10">
           <div className="bg-white px-4 py-3 rounded-2xl shadow-md mb-4 flex items-center justify-center border border-blue-400/30">
-             {/* Uses the uploaded logo from the public folder */}
-             <img src="/Bluebonnet-Logo.jpg" alt="Bluebonnet Animal Hospital" className="h-10 sm:h-14 object-contain" />
+             {/* Uses the uploaded logo from the public folder - renamed to logo.jpg to bypass Git case-sensitivity issues */}
+             <img src="/logo.jpg" alt="Bluebonnet Animal Hospital" className="h-10 sm:h-14 object-contain" />
           </div>
           <div className="flex items-center justify-center sm:justify-start gap-2.5">
             <PawPrint className="fill-blue-400 text-blue-200 opacity-90" size={22} />
