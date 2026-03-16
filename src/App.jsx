@@ -18,11 +18,14 @@ import {
   Stethoscope,
   PawPrint,
   Clock,
-  Smartphone
+  Smartphone,
+  Weight,
+  ShieldCheck
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTY4enw_CNuDrGT7PzL3ci9LDtCbfbLIZJl--zgUbKIRmbQuSLN8lZ64aN0RZmxTQyhMC5AKL5DU46m/pub?gid=0&single=true&output=csv';
+const WELLNESS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTY4enw_CNuDrGT7PzL3ci9LDtCbfbLIZJl--zgUbKIRmbQuSLN8lZ64aN0RZmxTQyhMC5AKL5DU46m/pub?gid=0&single=true&output=csv';
+const PREVENTION_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1v_jDkpaRaggahRIlmX5SHoKPIH1h7bKKMyN5gy-C1Aw/gviz/tq?tqx=out:csv';
 
 // --- ENHANCED ITEM INFORMATION ---
 const getEnhancedInfo = (item, species, lifeStage) => {
@@ -160,6 +163,15 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     austin: null
   };
 
+  // Prevention
+  if (cat === 'Prevention') return {
+    title: item.name,
+    what: "A veterinary-grade preventative medication protecting your pet from parasites.",
+    why: "Heartworms, fleas, and ticks transmit severe and sometimes fatal diseases. Consistent prevention is medically critical and much cheaper than treating an infection.",
+    austin: "Because Central Texas rarely experiences hard freezes, mosquitoes, fleas, and ticks remain active year-round. Skipping even one month leaves your pet extremely vulnerable.",
+    frequency: item.description || "Given according to product label."
+  };
+
   // Fallback
   return {
     title: item.name,
@@ -216,8 +228,8 @@ const parseCSV = (text) => {
     headers.forEach((header, index) => {
       let value = row[index] ? row[index].trim() : '';
       
-      if (header === 'price' || header === 'itemized_price') {
-        value = parseFloat(value.replace('$', '')) || 0;
+      if (header.includes('price') || header === 'itemized_price') {
+        value = parseFloat(value.replace(/\$/g, '').replace(/,/g, '')) || 0;
       }
       
       obj[header] = value;
@@ -237,6 +249,7 @@ const getIconType = (item) => {
   
   if (cat.includes('lab') || name.includes('test') || name.includes('panel')) return 'lab';
   if (name.includes('exam') || name.includes('consult')) return 'exam';
+  if (cat.includes('prevention')) return 'prevention';
   return 'vaccine';
 };
 
@@ -260,6 +273,7 @@ const BUNDLE_BASIC_PRICE_BASE = 225;
 
 export default function App() {
   const [services, setServices] = useState([]);
+  const [preventionServices, setPreventionServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -272,6 +286,14 @@ export default function App() {
   });
   const [labPreference, setLabPreference] = useState('comprehensive'); 
   
+  // Prevention States
+  const [petWeight, setPetWeight] = useState('');
+  const [prevCoverage, setPrevCoverage] = useState('');
+  const [prevSupply, setPrevSupply] = useState('6-Month');
+  const [selectedPrevProductName, setSelectedPrevProductName] = useState('');
+  const [isEconomicalSelected, setIsEconomicalSelected] = useState(false);
+  const [isPrevDeclined, setIsPrevDeclined] = useState(false); // NEW STATE
+
   const [modalItem, setModalItem] = useState(null);
   
   const [declinedItems, setDeclinedItems] = useState([]);
@@ -291,20 +313,45 @@ export default function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(SHEET_URL);
-        if (!response.ok) throw new Error('Failed to fetch data');
-        const text = await response.text();
-        const parsedData = parseCSV(text);
-        setServices(parsedData);
+        const [wellRes, prevRes] = await Promise.allSettled([
+          fetch(WELLNESS_SHEET_URL),
+          fetch(PREVENTION_SHEET_URL)
+        ]);
+
+        if (wellRes.status === 'fulfilled' && wellRes.value.ok) {
+          const wellText = await wellRes.value.text();
+          setServices(parseCSV(wellText));
+        } else {
+          throw new Error('Failed to fetch wellness data.');
+        }
+
+        if (prevRes.status === 'fulfilled' && prevRes.value.ok) {
+          const prevText = await prevRes.value.text();
+          const prevData = parseCSV(prevText).map(p => ({ ...p, category: 'Prevention' }));
+          setPreventionServices(prevData);
+        }
+
         setLoading(false);
       } catch (err) {
-        console.error("Error loading sheet:", err);
+        console.error("Error loading sheets:", err);
         setError("Could not load pricing data. Please check your internet connection.");
         setLoading(false);
       }
     };
     fetchData();
   }, []);
+
+  // Sync Prev Coverage when species changes
+  useEffect(() => {
+    if (species === 'cat') {
+      setPrevCoverage('Heartworm/Flea/Tick'); // Force auto-select for cats
+    } else {
+      setPrevCoverage(''); // Let dog owners choose
+    }
+    setSelectedPrevProductName('');
+    setIsEconomicalSelected(false);
+    setIsPrevDeclined(false); // Reset decline state if species changes
+  }, [species]);
 
   const getMatchesSpecies = (item, currentSpecies) => {
     const itemSpeciesRaw = (item.species || '').toLowerCase();
@@ -368,6 +415,57 @@ export default function App() {
     return { yr1, yr3 };
   }, [services, species, lifeStage]);
 
+  // --- PREVENTION LOGIC ---
+
+  const availablePreventions = useMemo(() => {
+    if (isPrevDeclined || !petWeight || !prevCoverage || !preventionServices.length) return [];
+    const weight = parseFloat(petWeight);
+    if (isNaN(weight) || weight <= 0) return [];
+
+    const priceKey = prevSupply === '6-Month' ? '6-month price' : '12-month price';
+
+    return preventionServices.filter(p => {
+      // Species match
+      if (!p.species || p.species.toLowerCase() !== species.toLowerCase()) return false;
+      
+      // Weight match
+      const min = parseFloat(p['weight min'] || 0);
+      const max = parseFloat(p['weight max'] || 999);
+      if (weight < min || weight > max) return false;
+
+      // Coverage match
+      const cov = (p.coverage || '').toLowerCase();
+      const selCov = prevCoverage.toLowerCase();
+      if (cov !== selCov) return false;
+
+      // Puppy exclusion rules
+      if (lifeStage === 'puppy') {
+        const n = (p['product name'] || '').toLowerCase();
+        if (n.includes('bravecto') || n.includes('proheart')) return false;
+      }
+
+      // Ensure price exists for the selected supply length
+      if (!p[priceKey] || p[priceKey] <= 0 || isNaN(p[priceKey])) return false;
+
+      return true;
+    });
+  }, [preventionServices, species, petWeight, prevCoverage, lifeStage, prevSupply, isPrevDeclined]);
+
+  const activePrevention = useMemo(() => {
+    if (!availablePreventions.length) return null;
+    
+    const priceKey = prevSupply === '6-Month' ? '6-month price' : '12-month price';
+    
+    if (isEconomicalSelected) {
+      return availablePreventions.reduce((minItem, currentItem) => 
+        currentItem[priceKey] < minItem[priceKey] ? currentItem : minItem
+      , availablePreventions[0]);
+    }
+
+    return availablePreventions.find(p => p['product name'] === selectedPrevProductName) || null;
+  }, [availablePreventions, isEconomicalSelected, selectedPrevProductName, prevSupply]);
+
+
   useEffect(() => {
     if (labVariants.combo && !selectedLabId) {
       setSelectedLabId(labVariants.combo.id);
@@ -410,6 +508,7 @@ export default function App() {
     if (cat === 'Core' && type === 'vaccine') return 'core_vaccine';
     if (cat === 'Labwork' && (isCombo || tag === 'basic' || item.isLabVariant)) return 'basic_lab'; 
     if (cat === 'Labwork' && (tag === 'comprehensive' || tag === 'senior')) return 'comp_lab';
+    if (cat === 'Prevention') return 'prevention';
     return 'other';
   };
 
@@ -494,7 +593,31 @@ export default function App() {
     const bundleRow = services.find(s => s.id === BUNDLE_ITEM_ID && matchesSpecies(s) && matchesLifeStage(s));
     if (bundleRow && !isPuppy) recs.push(bundleRow);
 
-    const uniqueRecs = [...new Map(recs.map(item => [item.id, item])).values()];
+    // --- Inject Active Prevention Selection ---
+    if (!isPrevDeclined && activePrevention) {
+      const priceKey = prevSupply === '6-Month' ? '6-month price' : '12-month price';
+      const price = activePrevention[priceKey];
+      
+      // Handle the specialized Proheart string replacement
+      let displayName = `${activePrevention['product name']} (${prevSupply} Supply)`;
+      if (activePrevention['product name'].toLowerCase().includes('proheart 12') && prevSupply === '12-Month') {
+        displayName = displayName.replace(/\(12-Month Supply\)/i, '(12 month Coverage Injection)');
+      } else if (activePrevention['product name'].toLowerCase().includes('proheart 12')) {
+        displayName = `${activePrevention['product name']} (12 month Coverage Injection)`;
+      }
+
+      recs.push({
+        id: 'prev_' + activePrevention['product name'],
+        name: displayName,
+        category: 'Prevention',
+        description: activePrevention.description,
+        price: price,
+        itemized_price: price,
+        isPrevention: true
+      });
+    }
+
+    const uniqueRecs = [...new Map(recs.map(item => [item.id || item.name, item])).values()];
     const comprehensiveIds = ['lab_adultk9', 'lab_adultfe', 'lab_seniork9', 'lab_seniorfe'];
     const standaloneIds = ['lab_hw-pcr', 'lab_hw', 'lab_pcr'];
     const hasComprehensive = uniqueRecs.some(item => comprehensiveIds.includes(item.id));
@@ -505,7 +628,7 @@ export default function App() {
       }
       return item;
     });
-  }, [species, lifeStage, lifestyle, labPreference, services, loading, error, labVariants, selectedLabId, rabiesVariants, selectedRabiesId]);
+  }, [species, lifeStage, lifestyle, labPreference, services, loading, error, labVariants, selectedLabId, rabiesVariants, selectedRabiesId, activePrevention, prevSupply, isPrevDeclined]);
 
   const { totalItemizedValue, displayTotal, activeBundle } = useMemo(() => {
     const acceptedItems = recommendations.filter(item => !declinedItems.includes(item.id));
@@ -598,7 +721,7 @@ export default function App() {
     const itemType = getItemType(item);
     
     // Prevent declining exam OR comprehensive labwork (when "Best Medicine" is selected)
-    const isUndeniable = itemType === 'exam' || (labPreference === 'comprehensive' && item.category === 'Labwork' && lifeStage !== 'puppy');
+    const isUndeniable = itemType === 'exam' || (labPreference === 'comprehensive' && item.category === 'Labwork' && lifeStage !== 'puppy') || item.isPrevention;
     if (isUndeniable) return; 
 
     setDeclinedItems(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -615,6 +738,7 @@ export default function App() {
     let modalDisplayCategory = modalItem.category;
     if (mItemType === 'exam') modalDisplayCategory = 'Required';
     else if (mIconType === 'vaccine') modalDisplayCategory = 'Vaccine';
+    else if (mIconType === 'prevention') modalDisplayCategory = 'Prevention';
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
@@ -763,9 +887,179 @@ export default function App() {
           </div>
         </section>
 
+        {/* --- 2. PREVENTION SECTION --- */}
+        <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 transition-all duration-300">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
+              <ShieldCheck size={20} className="text-blue-500"/> 2. Prevention (Optional)
+            </h2>
+            
+            {/* decline button here */}
+            {!isPrevDeclined && petWeight && (
+              <button 
+                onClick={() => {
+                   setIsPrevDeclined(true);
+                   setPetWeight('');
+                   setSelectedPrevProductName('');
+                   setIsEconomicalSelected(false);
+                }}
+                className="text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+              >
+                <X size={14} /> Decline
+              </button>
+            )}
+          </div>
+          
+          {isPrevDeclined ? (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center animate-in fade-in">
+               <div className="flex items-center gap-3">
+                 <Square size={20} className="text-slate-400 shrink-0" />
+                 <span className="text-sm text-slate-500 font-medium">Prevention declined</span>
+               </div>
+               <button 
+                 onClick={() => setIsPrevDeclined(false)}
+                 className="text-xs font-bold text-blue-600 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-full transition-colors"
+               >
+                 Re-add
+               </button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <Weight size={16} /> Pet Weight (lbs)
+                </label>
+                <input 
+                  type="number" 
+                  value={petWeight} 
+                  onChange={(e) => setPetWeight(e.target.value)} 
+                  placeholder="Enter weight in lbs" 
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" 
+                />
+                {lifeStage === 'puppy' && (
+                  <div className="mt-3 text-xs text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100 flex items-start gap-2">
+                    <Info className="shrink-0 mt-0.5" size={14} />
+                    <p><strong>Note for growing pets:</strong> It is recommended to get product month-to-month until your pet is in a stable weight range for the product they will be on long-term.</p>
+                  </div>
+                )}
+              </div>
+
+              {petWeight && parseFloat(petWeight) > 0 && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                  
+                  {/* Coverage Needed */}
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Coverage Needed</label>
+                    {species === 'dog' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {['Heartworm/Flea/Tick', 'Heartworm', 'Flea/Tick'].map(cov => (
+                          <button 
+                            key={cov} 
+                            onClick={() => setPrevCoverage(cov)} 
+                            className={`px-3 py-2.5 text-sm border rounded-lg font-medium transition-colors ${prevCoverage === cov ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                          >
+                            {cov === 'Heartworm/Flea/Tick' ? 'All-in-One Combo' : cov + ' Only'}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <button 
+                          className="px-3 py-2.5 text-sm border rounded-lg font-medium transition-colors bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
+                          disabled
+                        >
+                          All-in-One Combo
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Supply Length */}
+                  {prevCoverage && (
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Supply Length</label>
+                      <div className="flex gap-2">
+                          {['6-Month', '12-Month'].map(sup => (
+                            <button 
+                              key={sup} 
+                              onClick={() => setPrevSupply(sup)} 
+                              className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${prevSupply === sup ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                            >
+                              {sup} Supply
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Available Products List */}
+                  {prevCoverage && availablePreventions.length > 0 && (
+                    <div className="space-y-3 pt-2">
+                      <label className="block text-sm font-semibold text-slate-700">Select Product Preference</label>
+                      
+                      <button 
+                        onClick={() => setIsEconomicalSelected(true)}
+                        className={`w-full text-left p-3 border rounded-xl flex items-center justify-between transition-all ${isEconomicalSelected ? 'bg-green-50 border-green-500 ring-1 ring-green-500' : 'bg-white border-slate-200 hover:border-green-300'}`}
+                      >
+                          <div>
+                            <div className="font-bold text-slate-800 flex items-center gap-2">
+                              Most Economical Option <Tag size={14} className="text-green-600"/>
+                            </div>
+                            <div className="text-xs text-slate-500 mt-1">Automatically picks the lowest cost product for a {prevSupply.toLowerCase()} supply.</div>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isEconomicalSelected ? 'bg-green-500 border-green-500' : 'border-slate-300'}`}>
+                            {isEconomicalSelected && <Check size={12} className="text-white"/>}
+                          </div>
+                      </button>
+
+                      {availablePreventions.map(p => {
+                          const isSelected = !isEconomicalSelected && selectedPrevProductName === p['product name'];
+                          const price = p[prevSupply === '6-Month' ? '6-month price' : '12-month price'];
+                          
+                          return (
+                            <button 
+                              key={p['product name']}
+                              onClick={() => { setIsEconomicalSelected(false); setSelectedPrevProductName(p['product name']); }}
+                              className={`w-full text-left p-3 border rounded-xl flex items-center justify-between transition-all ${isSelected ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' : 'bg-white border-slate-200 hover:border-blue-300'}`}
+                            >
+                              <div className="pr-4">
+                                <div className="font-bold text-slate-800">{p['product name']}</div>
+                                <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                                  <Clock size={12} className="text-slate-400"/> 
+                                  {p.description || "View schedule"}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4 shrink-0">
+                                  <div className="font-semibold text-slate-700">${price.toFixed(2)}</div>
+                                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
+                                    {isSelected && <Check size={12} className="text-white"/>}
+                                  </div>
+                              </div>
+                            </button>
+                          );
+                      })}
+                    </div>
+                  )}
+                  
+                  {prevCoverage && availablePreventions.length === 0 && (
+                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
+                      <Info className="text-orange-500 shrink-0 mt-0.5" size={18} />
+                      <p className="text-sm text-orange-800 leading-relaxed">
+                        No matching products were found for a {species} weighing {petWeight} lbs requiring {prevCoverage} coverage for a {prevSupply} supply.
+                        {lifeStage === 'puppy' && " Note: Certain long-acting products are restricted for puppies."}
+                      </p>
+                    </div>
+                  )}
+
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
         {!(species === 'cat' && lifeStage === 'puppy') && (
         <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h2 className="text-lg font-semibold mb-4 text-slate-700 flex items-center gap-2"><ShieldAlert size={20} className="text-blue-500"/> 2. Lifestyle & Risk</h2>
+          <h2 className="text-lg font-semibold mb-4 text-slate-700 flex items-center gap-2"><ShieldAlert size={20} className="text-blue-500"/> 3. Lifestyle & Risk</h2>
           <div className="space-y-3">
             {species === 'dog' && (
               <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer">
@@ -852,9 +1146,10 @@ export default function App() {
                 let displayCategory = item.category;
                 if (itemType === 'exam') displayCategory = 'Required';
                 else if (iconType === 'vaccine') displayCategory = 'Vaccine';
+                else if (iconType === 'prevention') displayCategory = 'Prevention';
 
                 // Prevent declining Exam OR Comprehensive labwork
-                const isUndeniable = itemType === 'exam' || (labPreference === 'comprehensive' && item.category === 'Labwork' && lifeStage !== 'puppy');
+                const isUndeniable = itemType === 'exam' || (labPreference === 'comprehensive' && item.category === 'Labwork' && lifeStage !== 'puppy') || iconType === 'prevention';
 
                 // Increased left padding logic for bundle items
                 return (
@@ -874,13 +1169,21 @@ export default function App() {
                            </div>
                         )}
                         
-                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-max px-2 py-1 bg-slate-800 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
-                          {isUndeniable ? (itemType === 'exam' ? "Required Item" : "Best Medicine Standard") : (isDeclined ? "Re-add to Visit" : "Decline Service")}
-                          <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-800"></div>
-                        </div>
+                        {/* Hidden tooltip for the checkbox */}
+                        {!isUndeniable && (
+                          <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-max px-2 py-1 bg-slate-800 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+                            {isDeclined ? "Re-add to Visit" : "Decline Service"}
+                            <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-800"></div>
+                          </div>
+                        )}
                       </button>
 
-                      <div className="mt-1 text-slate-400">{iconType === 'vaccine' && <Syringe size={18} />}{iconType === 'lab' && <Activity size={18} />}{iconType === 'exam' && <Heart size={18} />}</div>
+                      <div className="mt-1 text-slate-400">
+                        {iconType === 'vaccine' && <Syringe size={18} />}
+                        {iconType === 'lab' && <Activity size={18} />}
+                        {iconType === 'exam' && <Heart size={18} />}
+                        {iconType === 'prevention' && <ShieldCheck size={18} />}
+                      </div>
                       
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
@@ -894,7 +1197,7 @@ export default function App() {
                                </div>
                              )}
                           </div>
-                          <div className="text-right">
+                          <div className="text-right pl-2">
                              <div className="flex flex-col items-end">
                                {/* Strikethrough Logic */}
                                {((item.id === BUNDLE_PUPPY_ID || item.id === BUNDLE_KITTEN_ID) && !isDeclined || (item.id !== BUNDLE_ITEM_ID && item.id !== BUNDLE_PUPPY_ID && item.id !== BUNDLE_KITTEN_ID && !isDeclined && (isIncluded || isBasicLabInComp || (isBundleActive && item.itemized_price > item.price)))) && (
@@ -903,7 +1206,7 @@ export default function App() {
                                <span className={`font-semibold block ${isIncluded || (isBasicLabInComp && !isDeclined) ? 'text-indigo-600' : 'text-slate-700'}`}>
                                  {isIncluded || (isBasicLabInComp && !isDeclined) ? 'Included' : 
                                   ((item.id === BUNDLE_ITEM_ID || item.id === BUNDLE_PUPPY_ID || item.id === BUNDLE_KITTEN_ID) && isDeclined) ? '$0.00' :
-                                  `$${(isBundleActive && !isDeclined ? item.price : item.itemized_price).toFixed(2)}`}
+                                  `$${(isBundleActive && !isDeclined && !item.isPrevention ? item.price : item.itemized_price).toFixed(2)}`}
                                </span>
                              </div>
                              
@@ -968,7 +1271,7 @@ export default function App() {
               })
             )}
           </div>
-          <div className="p-4 bg-slate-50 border-t border-slate-200"><p className="text-[10px] text-slate-500 text-center">*Prices are estimates only. Medications and prevention products are calculated separately based on weight.</p></div>
+          <div className="p-4 bg-slate-50 border-t border-slate-200"><p className="text-[10px] text-slate-500 text-center">*Prices are estimates only. Prevention products are calculated separately based on weight.</p></div>
         </section>
 
         {/* --- APP DOWNLOAD BANNER --- */}
