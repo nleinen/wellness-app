@@ -36,9 +36,9 @@ const getEnhancedInfo = (item, species, lifeStage) => {
   // Bundles
   if (id.includes('bundle')) return {
     title: item.name,
-    what: "Discounted, all-inclusive packages designed to provide young pets with their full series of exams, core vaccinations, and essential diagnostic screenings.",
+    what: "Discounted, all-inclusive packages designed to provide young and senior pets with their full series of exams, core vaccinations, and essential diagnostic screenings.",
     why: "Bundling these services ensures your pet stays on a strict medical schedule during their most vulnerable developmental stage while providing you with significant savings.",
-    austin: "Central Texas has a high exposure rate for infectious diseases due to our year-round outdoor lifestyle. Establishing strong immunity early is the best way to protect your new family member before they hit the trails or parks."
+    austin: "Central Texas has a high exposure rate for infectious diseases due to our year-round outdoor lifestyle. Establishing strong immunity is the best way to protect your new family member before they hit the trails or parks."
   };
 
   // Exams
@@ -57,7 +57,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A core vaccine that protects against three major viral diseases: Distemper, Adenovirus (Hepatitis), and Parvovirus.",
     why: "These diseases are highly contagious and can be fatal, especially Parvovirus, which survives in the environment for long periods. This vaccine is essential for every dog regardless of lifestyle.",
     austin: "With Austin's massive dog park culture and popular trails (like the Barton Creek Greenbelt), your dog has a high chance of encountering contaminated soil where Parvovirus thrives.",
-    frequency: lifeStage === 'puppy' ? "Every 3-4 weeks until >16 weeks, then at the first annual appointment, then every 3 years thereafter." : "Every 3 years."
+    frequency: lifeStage === 'puppy' ? "Every 3-4 weeks until >16 weeks, then at the first annual appointment, then every 3 years thereafter." : "Every 3 years, if boosted on schedule."
   };
 
   // Rabies (handles both Dog and Cat)
@@ -81,7 +81,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "Often called the 'Kennel Cough' vaccine, it protects against the most common bacterial cause of infectious tracheobronchitis.",
     why: "It prevents harsh, hacking coughs and respiratory infections. This is a core vaccine at our practice, essential for dogs that interact with others.",
     austin: "An absolute must for Austin's dog-friendly patios, breweries, and busy daycare facilities where respiratory bugs spread rapidly through the air.",
-    frequency: "Intranasal vaccine given every 1 year."
+    frequency: "Intranasal vaccine given every year."
   };
 
   // Leptospirosis
@@ -90,7 +90,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A core vaccine against a bacterial infection spread through the urine of wildlife (like raccoons, opossums, or rodents) often found in soil or standing water.",
     why: "Leptospirosis can cause life-threatening kidney or liver failure. It is also 'zoonotic,' meaning humans can contract the disease from their infected pets.",
     austin: "Extremely critical in Austin. Dogs easily contract Lepto by drinking from puddles, swimming in Lady Bird Lake or local creeks, or just sniffing areas where urban wildlife frequently travel in backyards.",
-    frequency: "Every 1 year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later)."
+    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later)."
   };
 
   // Canine Influenza
@@ -124,8 +124,8 @@ const getEnhancedInfo = (item, species, lifeStage) => {
   if ((name.includes('combo') || name.includes('heartworm')) && cat === 'Labwork') return {
     title: item.name,
     what: "A blood test combined with a fecal screen to check for heartworms and common intestinal parasites.",
-    why: "Heartworms are transmitted by mosquitoes and cause permanent heart and lung damage. This annual screen ensures your pet is clear of infection before continuing their monthly prevention.",
-    austin: "Because Central Texas rarely gets hard freezes, mosquitoes are a nearly year-round threat. Heartworm disease is highly endemic here, making annual testing and strict year-round prevention absolutely critical.",
+    why: "Heartworms are transmitted by mosquitoes and can cause permanent heart and lung damage. To ensure your pet's safety, we utilize advanced PCR technology that is significantly more sensitive than traditional microscopic screens. This DNA-based test can detect common intestinal parasites—such as Giardia, Hookworms, and Roundworms—even when they are 'hidden' and not actively shedding eggs. This ensures your pet is truly clear of infection before continuing their essential monthly prevention.",
+    austin: "Because Central Texas rarely gets hard freezes, both mosquitoes and intestinal parasites remain active threats nearly year-round. Heartworm disease is highly endemic to the Austin area, and our popular local parks, dog-friendly patios, and trails are frequent sources of parasitic exposure. Due to this high level of community traffic, using the most sensitive DNA screening available is critical to catch low-level or asymptomatic infections that traditional tests often miss.",
     frequency: "Screened every year."
   };
 
@@ -159,7 +159,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
   if (id.includes('senior') && cat === 'Labwork') return {
     title: item.name,
     what: "Our most comprehensive diagnostic screen, including a Complete Blood Cell Count (CBC), expanded organ chemistries, thyroid (T4) testing, urinalysis, and an intestinal parasite screen.",
-    why: "As pets age, the risk of 'hidden' diseases like kidney disease, hyperthyroidism, or diabetes increases. This panel checks much more than standard screens to catch issues early when they are most manageable.",
+    why: "As pets age, the risk of 'hidden' diseases like kidney/liver disease, thyroid disease, or diabetes increases. This panel checks much more than standard screens to catch issues early when they are most manageable.",
     austin: null
   };
 
