@@ -109,7 +109,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A core vaccine against a bacterial infection spread through the urine of wildlife (like raccoons, opossums, or rodents) often found in soil or standing water.",
     why: "Leptospirosis can cause life-threatening kidney or liver failure. It is also 'zoonotic,' meaning humans can contract the disease from their infected pets.",
     austin: "Extremely critical in Austin. Dogs easily contract Lepto by drinking from puddles, swimming in Lady Bird Lake or local creeks, or just sniffing areas where urban wildlife frequently travel in backyards.",
-    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later. The additional booster of the vaccine is an additional cost of $55)."
+    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later. The additional booster of the vaccine is an additional cost of $45)."
   };
 
   // Canine Influenza
@@ -118,7 +118,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A vaccine that protects against the highly contagious 'dog flu' (H3N8 and H3N2 strains).",
     why: "Influenza is a social disease spread through respiratory droplets. It can cause severe coughing, fever, and in some cases, life-threatening pneumonia.",
     austin: "Flu outbreaks happen frequently in high-density social areas. If your dog visits Austin boarding facilities, groomers, or crowded dog parks, this is highly recommended.",
-    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later. The additional booster of the vaccine is an additional cost of $55)."
+    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later. The additional booster of the vaccine is an additional cost of $60)."
   };
 
   // RCP / FVRCP
@@ -136,7 +136,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A vaccine that protects against Feline Leukemia, a virus that weakens a cat's immune system and can cause cancer or severe anemia.",
     why: "FeLV is spread through close contact, such as grooming, biting, or sharing water bowls. Vaccination is highly recommended for all kittens and any adult cat with outdoor access.",
     austin: "Austin has a very large free-roaming and community cat population. If your cat ever steps onto the patio or back yard, they are at risk of encountering an infected stray.",
-    frequency: lifeStage === 'puppy' ? "Two doses are given 3-4 weeks apart (the additional booster of the vaccine is an additional cost of $55), then every 1-2 years based on lifestyle." : "Every 1-2 years based on lifestyle (Unless it is the first time given, in which case it is boosted 4 weeks later. The additional booster of the vaccine is an additional cost of $55)."
+    frequency: lifeStage === 'puppy' ? "Two doses are given 3-4 weeks apart (the additional booster of the vaccine is an additional cost of $60), then every 1-2 years based on lifestyle." : "Every 1-2 years based on lifestyle (Unless it is the first time given, in which case it is boosted 4 weeks later. The additional booster of the vaccine is an additional cost of $60)."
   };
 
   // Heartworm Combo Lab
