@@ -27,6 +27,25 @@ import {
 const WELLNESS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTY4enw_CNuDrGT7PzL3ci9LDtCbfbLIZJl--zgUbKIRmbQuSLN8lZ64aN0RZmxTQyhMC5AKL5DU46m/pub?gid=0&single=true&output=csv';
 const PREVENTION_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1v_jDkpaRaggahRIlmX5SHoKPIH1h7bKKMyN5gy-C1Aw/gviz/tq?tqx=out:csv';
 
+// --- CONSTANTS ---
+const LIFE_STAGE_TOOLTIPS = {
+  dog: {
+    puppy: "0-6m",
+    adult: "<25 lbs = 6m-9y\n25-90 lbs = 6m-6y\n90+ lbs = 6m-4y",
+    senior: "<25 lbs = 10+y\n25-90 lbs = 7+y\n90+ lbs = 5+y"
+  },
+  cat: {
+    puppy: "0-6m",
+    adult: "6m-9y",
+    senior: "10+y"
+  }
+};
+
+const BUNDLE_ITEM_ID = 'exam_bundle';
+const BUNDLE_PUPPY_ID = 'puppy_bundle';
+const BUNDLE_KITTEN_ID = 'kitten_bundle';
+const BUNDLE_BASIC_PRICE_BASE = 225;
+
 // --- ENHANCED ITEM INFORMATION ---
 const getEnhancedInfo = (item, species, lifeStage) => {
   const name = (item.name || '').toLowerCase();
@@ -36,9 +55,9 @@ const getEnhancedInfo = (item, species, lifeStage) => {
   // Bundles
   if (id.includes('bundle')) return {
     title: item.name,
-    what: "Discounted, all-inclusive packages designed to provide young and senior pets with their full series of exams, core vaccinations, and essential diagnostic screenings.",
+    what: "Discounted, all-inclusive packages designed to provide young pets with their full series of exams, core vaccinations, and essential diagnostic screenings.",
     why: "Bundling these services ensures your pet stays on a strict medical schedule during their most vulnerable developmental stage while providing you with significant savings.",
-    austin: "Central Texas has a high exposure rate for infectious diseases due to our year-round outdoor lifestyle. Establishing strong immunity is the best way to protect your new family member before they hit the trails or parks."
+    austin: "Central Texas has a high exposure rate for infectious diseases due to our year-round outdoor lifestyle. Establishing strong immunity early is the best way to protect your new family member before they hit the trails or parks."
   };
 
   // Exams
@@ -57,10 +76,10 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A core vaccine that protects against three major viral diseases: Distemper, Adenovirus (Hepatitis), and Parvovirus.",
     why: "These diseases are highly contagious and can be fatal, especially Parvovirus, which survives in the environment for long periods. This vaccine is essential for every dog regardless of lifestyle.",
     austin: "With Austin's massive dog park culture and popular trails (like the Barton Creek Greenbelt), your dog has a high chance of encountering contaminated soil where Parvovirus thrives.",
-    frequency: lifeStage === 'puppy' ? "Every 3-4 weeks until >16 weeks, then at the first annual appointment, then every 3 years thereafter." : "Every 3 years, if boosted on schedule."
+    frequency: lifeStage === 'puppy' ? "Every 3-4 weeks until >16 weeks, then at the first annual appointment, then every 3 years thereafter." : "Every 3 years."
   };
 
-  // Rabies (handles both Dog and Cat)
+  // Rabies
   if (name.includes('rabies')) return {
     title: item.name,
     what: name.includes('purevax') ? "A specialized, non-adjuvanted vaccine designed specifically for the safety of cats to prevent Rabies." : "A vaccine that protects against the Rabies virus, which affects the central nervous system.",
@@ -81,7 +100,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "Often called the 'Kennel Cough' vaccine, it protects against the most common bacterial cause of infectious tracheobronchitis.",
     why: "It prevents harsh, hacking coughs and respiratory infections. This is a core vaccine at our practice, essential for dogs that interact with others.",
     austin: "An absolute must for Austin's dog-friendly patios, breweries, and busy daycare facilities where respiratory bugs spread rapidly through the air.",
-    frequency: "Intranasal vaccine given every year."
+    frequency: "Intranasal vaccine given every 1 year."
   };
 
   // Leptospirosis
@@ -90,7 +109,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A core vaccine against a bacterial infection spread through the urine of wildlife (like raccoons, opossums, or rodents) often found in soil or standing water.",
     why: "Leptospirosis can cause life-threatening kidney or liver failure. It is also 'zoonotic,' meaning humans can contract the disease from their infected pets.",
     austin: "Extremely critical in Austin. Dogs easily contract Lepto by drinking from puddles, swimming in Lady Bird Lake or local creeks, or just sniffing areas where urban wildlife frequently travel in backyards.",
-    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later)."
+    frequency: "Every 1 year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later)."
   };
 
   // Canine Influenza
@@ -149,28 +168,40 @@ const getEnhancedInfo = (item, species, lifeStage) => {
 
   // Adult Wellness Labwork
   if (id.includes('adult') && cat === 'Labwork') return {
-    title: item.name,
-    what: "A blood panel (CBC and Chemistry) and urinalysis that checks organ function, including the kidneys, liver, and blood sugar levels.",
+    title: "Adult Early Detection Screening Labwork",
+    what: "A blood panel (CBC and Chemistry) that checks organ function, including the kidneys, liver, and blood sugar levels.",
     why: "These tests provide a 'window' inside the body, allowing us to establish a healthy baseline and catch metabolic changes long before your pet acts or feels sick.",
     austin: null
   };
 
   // Senior Wellness Labwork
   if (id.includes('senior') && cat === 'Labwork') return {
-    title: item.name,
+    title: "Senior Early Detection Screening Labwork",
     what: "Our most comprehensive diagnostic screen, including a Complete Blood Cell Count (CBC), expanded organ chemistries, thyroid (T4) testing, urinalysis, and an intestinal parasite screen.",
-    why: "As pets age, the risk of 'hidden' diseases like kidney/liver disease, thyroid disease, or diabetes increases. This panel checks much more than standard screens to catch issues early when they are most manageable.",
+    why: "As pets age, the risk of 'hidden' diseases like kidney disease, hyperthyroidism, or diabetes increases. This panel checks much more than standard screens to catch issues early when they are most manageable.",
     austin: null
   };
 
   // Prevention
-  if (cat === 'Prevention') return {
-    title: item.name,
-    what: "A veterinary-grade preventative medication protecting your pet from parasites.",
-    why: "Heartworms, fleas, and ticks transmit severe and sometimes fatal diseases. Consistent prevention is medically critical and much cheaper than treating an infection.",
-    austin: "Because Central Texas rarely experiences hard freezes, mosquitoes, fleas, and ticks remain active year-round. Skipping even one month leaves your pet extremely vulnerable.",
-    frequency: item.description || "Given according to product label."
-  };
+  if (cat === 'Prevention') {
+    let freqText = "Administered once every month.";
+    if (name.includes('extended') || name.includes('6-month') || name.includes('12-month') || name.includes('injectable')) {
+      freqText = "Given every 6 to 12 months.";
+    }
+    
+    let whatText = "Protection against common parasites.";
+    if (name.includes('all-in-one') || name.includes('combo') || name.includes('trio') || name.includes('quattro') || (name.includes('heartworm') && (name.includes('flea') || name.includes('tick')))) whatText = "Complete year-round protection against heartworms, fleas, ticks, and intestinal parasites.";
+    else if (name.includes('heartworm') || name.includes('proheart') || name.includes('heartgard')) whatText = "Targeted protection against heartworm disease and intestinal parasites.";
+    else if (name.includes('flea') || name.includes('tick') || name.includes('bravecto') || name.includes('nexgard')) whatText = "Targeted protection against fleas and ticks.";
+
+    return {
+      title: item.name,
+      what: whatText,
+      why: "Consistent prevention is far cheaper and safer than treating a parasitic infection once it has taken hold.",
+      austin: "Because of our mild winters, parasites never go dormant in Austin. Skipping even one month of prevention significantly increases the risk of infection.",
+      frequency: item.description || freqText
+    };
+  }
 
   // Fallback
   return {
@@ -253,29 +284,12 @@ const getIconType = (item) => {
   return 'vaccine';
 };
 
-const LIFE_STAGE_TOOLTIPS = {
-  dog: {
-    puppy: "0-1y",
-    adult: "<25 lbs = 1-9y\n25-90 lbs = 1-6y\n90+ lbs = 1-4y",
-    senior: "<25 lbs = 10+y\n25-90 lbs = 7+y\n90+ lbs = 5+y"
-  },
-  cat: {
-    puppy: "0-1y",
-    adult: "1-9y",
-    senior: "10+y"
-  }
-};
-
-const BUNDLE_ITEM_ID = 'exam_bundle';
-const BUNDLE_PUPPY_ID = 'puppy_bundle';
-const BUNDLE_KITTEN_ID = 'kitten_bundle';
-const BUNDLE_BASIC_PRICE_BASE = 225;
-
 export default function App() {
   const [services, setServices] = useState([]);
   const [preventionServices, setPreventionServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imgError, setImgError] = useState(false);
 
   const [species, setSpecies] = useState('dog'); 
   const [lifeStage, setLifeStage] = useState('adult'); 
@@ -285,6 +299,7 @@ export default function App() {
     grooming: false, 
   });
   const [labPreference, setLabPreference] = useState('comprehensive'); 
+  const [isPuppySixMonths, setIsPuppySixMonths] = useState(false);
   
   // Prevention States
   const [petWeight, setPetWeight] = useState('');
@@ -292,7 +307,7 @@ export default function App() {
   const [prevSupply, setPrevSupply] = useState('6-Month');
   const [selectedPrevProductName, setSelectedPrevProductName] = useState('');
   const [isEconomicalSelected, setIsEconomicalSelected] = useState(false);
-  const [isPrevDeclined, setIsPrevDeclined] = useState(false); // NEW STATE
+  const [isPrevDeclined, setIsPrevDeclined] = useState(false); 
 
   const [modalItem, setModalItem] = useState(null);
   
@@ -350,8 +365,15 @@ export default function App() {
     }
     setSelectedPrevProductName('');
     setIsEconomicalSelected(false);
-    setIsPrevDeclined(false); // Reset decline state if species changes
+    setIsPrevDeclined(false); 
   }, [species]);
+
+  // Reset puppy 6 month check if life stage changes
+  useEffect(() => {
+    if (lifeStage !== 'puppy') {
+      setIsPuppySixMonths(false);
+    }
+  }, [lifeStage]);
 
   const getMatchesSpecies = (item, currentSpecies) => {
     const itemSpeciesRaw = (item.species || '').toLowerCase();
@@ -425,26 +447,22 @@ export default function App() {
     const priceKey = prevSupply === '6-Month' ? '6-month price' : '12-month price';
 
     return preventionServices.filter(p => {
-      // Species match
       if (!p.species || p.species.toLowerCase() !== species.toLowerCase()) return false;
       
-      // Weight match
       const min = parseFloat(p['weight min'] || 0);
       const max = parseFloat(p['weight max'] || 999);
       if (weight < min || weight > max) return false;
 
-      // Coverage match
       const cov = (p.coverage || '').toLowerCase();
       const selCov = prevCoverage.toLowerCase();
       if (cov !== selCov) return false;
 
-      // Puppy exclusion rules
+      // Puppy exclusion rules for certain long-acting products
       if (lifeStage === 'puppy') {
         const n = (p['product name'] || '').toLowerCase();
         if (n.includes('bravecto') || n.includes('proheart')) return false;
       }
 
-      // Ensure price exists for the selected supply length
       if (!p[priceKey] || p[priceKey] <= 0 || isNaN(p[priceKey])) return false;
 
       return true;
@@ -464,7 +482,6 @@ export default function App() {
 
     return availablePreventions.find(p => p['product name'] === selectedPrevProductName) || null;
   }, [availablePreventions, isEconomicalSelected, selectedPrevProductName, prevSupply]);
-
 
   useEffect(() => {
     if (labVariants.combo && !selectedLabId) {
@@ -580,6 +597,12 @@ export default function App() {
         if (fivItem) recs.push(fivItem);
       }
       
+      // Mid-series Heartworm Screen for older puppies
+      if (isPuppySixMonths) {
+         const hwItem = services.find(s => s.category === 'Labwork' && s.name.toLowerCase().includes('heartworm') && !s.name.toLowerCase().includes('fecal') && !s.name.toLowerCase().includes('parasite') && getMatchesSpecies(s, species));
+         if (hwItem) recs.push({ ...hwItem, isLabVariant: false }); 
+      }
+      
       const bundleId = species === 'dog' ? BUNDLE_PUPPY_ID : BUNDLE_KITTEN_ID;
       const youngBundle = services.find(s => s.id === bundleId && matchesSpecies(s) && matchesLifeStage(s));
       if (youngBundle) recs.push(youngBundle);
@@ -598,7 +621,6 @@ export default function App() {
       const priceKey = prevSupply === '6-Month' ? '6-month price' : '12-month price';
       const price = activePrevention[priceKey];
       
-      // Handle the specialized Proheart string replacement
       let displayName = `${activePrevention['product name']} (${prevSupply} Supply)`;
       if (activePrevention['product name'].toLowerCase().includes('proheart 12') && prevSupply === '12-Month') {
         displayName = displayName.replace(/\(12-Month Supply\)/i, '(12 month Coverage Injection)');
@@ -623,12 +645,21 @@ export default function App() {
     const hasComprehensive = uniqueRecs.some(item => comprehensiveIds.includes(item.id));
 
     return uniqueRecs.map(item => {
-      if (hasComprehensive && standaloneIds.includes(item.id)) {
-        return { ...item, isIncludedInComp: true };
+      let newItem = { ...item };
+      
+      if (hasComprehensive && standaloneIds.includes(newItem.id)) {
+        newItem.isIncludedInComp = true;
       }
-      return item;
+      
+      // Dynamic renaming for Adult/Senior labwork items
+      if (newItem.category === 'Labwork') {
+          if (newItem.id.includes('adult')) newItem.name = "Adult Early Detection Screening Labwork";
+          if (newItem.id.includes('senior')) newItem.name = "Senior Early Detection Screening Labwork";
+      }
+
+      return newItem;
     });
-  }, [species, lifeStage, lifestyle, labPreference, services, loading, error, labVariants, selectedLabId, rabiesVariants, selectedRabiesId, activePrevention, prevSupply, isPrevDeclined]);
+  }, [species, lifeStage, lifestyle, labPreference, services, loading, error, labVariants, selectedLabId, rabiesVariants, selectedRabiesId, activePrevention, prevSupply, isPrevDeclined, isPuppySixMonths]);
 
   const { totalItemizedValue, displayTotal, activeBundle } = useMemo(() => {
     const acceptedItems = recommendations.filter(item => !declinedItems.includes(item.id));
@@ -732,7 +763,6 @@ export default function App() {
     if (!modalItem) return null;
     const info = getEnhancedInfo(modalItem, species, lifeStage);
     
-    // Dynamically update modal category label
     const mItemType = getItemType(modalItem);
     const mIconType = getIconType(modalItem);
     let modalDisplayCategory = modalItem.category;
@@ -742,16 +772,13 @@ export default function App() {
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-        {/* Background Overlay */}
         <div 
           className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
           onClick={() => setModalItem(null)}
         />
         
-        {/* Modal Box */}
         <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
           
-          {/* Header */}
           <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
             <div>
               <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wide mb-2 inline-block">
@@ -769,9 +796,7 @@ export default function App() {
             </button>
           </div>
 
-          {/* Content Body */}
           <div className="p-5 sm:p-6 overflow-y-auto space-y-6 text-slate-700 leading-relaxed">
-            {/* What it is */}
             <div>
               <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-2 text-base">
                 <Stethoscope size={18} className="text-blue-500" />
@@ -780,7 +805,6 @@ export default function App() {
               <p className="text-sm">{info.what}</p>
             </div>
 
-            {/* Frequency (New!) */}
             {info.frequency && (
               <div>
                 <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-2 text-base">
@@ -791,7 +815,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Why it's important */}
             {info.why && (
               <div>
                 <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-2 text-base">
@@ -802,7 +825,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Austin Context */}
             {info.austin && (
               <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl">
                 <h4 className="flex items-center gap-2 font-bold text-orange-800 mb-2 text-sm">
@@ -836,17 +858,18 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-20">
       
-      {/* RENDER MODAL */}
       {renderModal()}
 
       <header className="bg-blue-600 text-white pt-6 pb-5 px-6 shadow-lg relative overflow-hidden">
-        {/* Subtle decorative background pattern */}
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
         
         <div className="max-w-2xl mx-auto flex flex-col items-center sm:items-start text-center sm:text-left relative z-10">
           <div className="bg-white px-4 py-3 rounded-2xl shadow-md mb-4 flex items-center justify-center border border-blue-400/30">
-             {/* Uses the uploaded logo from the public folder - renamed to logo.jpg to bypass Git case-sensitivity issues */}
-             <img src="/logo.jpg" alt="Bluebonnet Animal Hospital" className="h-10 sm:h-14 object-contain" />
+            {imgError ? (
+              <span className="font-bold text-blue-800 text-lg">Bluebonnet Animal Hospital</span>
+            ) : (
+              <img src="/logo.jpg" alt="Bluebonnet Animal Hospital" className="h-10 sm:h-14 object-contain" onError={() => setImgError(true)} />
+            )}
           </div>
           <div className="flex items-center justify-center sm:justify-start gap-2.5">
             <PawPrint className="fill-blue-400 text-blue-200 opacity-90" size={22} />
@@ -894,7 +917,6 @@ export default function App() {
               <ShieldCheck size={20} className="text-blue-500"/> 2. Prevention (Optional)
             </h2>
             
-            {/* decline button here */}
             {!isPrevDeclined && petWeight && (
               <button 
                 onClick={() => {
@@ -1060,26 +1082,49 @@ export default function App() {
         {!(species === 'cat' && lifeStage === 'puppy') && (
         <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
           <h2 className="text-lg font-semibold mb-4 text-slate-700 flex items-center gap-2"><ShieldAlert size={20} className="text-blue-500"/> 3. Lifestyle & Risk</h2>
+          
+          {lifeStage === 'puppy' && species === 'dog' && (
+            <div className="mb-4 pb-4 border-b border-slate-100">
+              <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
+                <div className={`w-5 h-5 rounded border flex items-center justify-center ${isPuppySixMonths ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
+                  {isPuppySixMonths && <Check size={14} className="text-white" />}
+                </div>
+                <input type="checkbox" className="hidden" checked={isPuppySixMonths} onChange={() => setIsPuppySixMonths(!isPuppySixMonths)} />
+                <span className="flex-1 text-sm font-medium text-slate-700">Has your puppy reached 6 months of age?</span>
+              </label>
+            </div>
+          )}
+
           <div className="space-y-3">
             {species === 'dog' && (
               <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer">
                 <div className={`w-5 h-5 rounded border flex items-center justify-center ${lifestyle.boarding ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>{lifestyle.boarding && <Check size={14} className="text-white" />}</div>
-                <input type="checkbox" className="hidden" checked={lifestyle.boarding} onChange={() => toggleLifestyle('boarding')} /><span className="flex-1">Goes to Boarding, Grooming, or Daycare?</span>
+                <input type="checkbox" className="hidden" checked={lifestyle.boarding} onChange={() => toggleLifestyle('boarding')} /><span className="flex-1 text-sm">Goes to Boarding, Grooming, or Daycare?</span>
               </label>
             )}
             {species === 'cat' && (
               <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer">
                 <div className={`w-5 h-5 rounded border flex items-center justify-center ${lifestyle.outdoors ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>{lifestyle.outdoors && <Check size={14} className="text-white" />}</div>
-                <input type="checkbox" className="hidden" checked={lifestyle.outdoors} onChange={() => toggleLifestyle('outdoors')} /><span className="flex-1">Goes Outdoors?</span>
+                <input type="checkbox" className="hidden" checked={lifestyle.outdoors} onChange={() => toggleLifestyle('outdoors')} /><span className="flex-1 text-sm">Goes Outdoors?</span>
               </label>
             )}
           </div>
           {lifeStage !== 'puppy' && (
             <div className="mt-6 pt-6 border-t border-slate-100">
-                <h3 className="text-sm font-semibold mb-2">Labwork Preference</h3>
+                <h3 className="text-sm font-semibold mb-3">Labwork Preference</h3>
                 <div className="flex gap-2">
-                <button onClick={() => setLabPreference('basic')} className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${labPreference === 'basic' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Essential</button>
-                <button onClick={() => setLabPreference('comprehensive')} className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${labPreference === 'comprehensive' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Best Medicine (Recommended)</button>
+                  <button 
+                    onClick={() => setLabPreference('comprehensive')} 
+                    className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${labPreference === 'comprehensive' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'}`}
+                  >
+                    Best Medicine (Recommended)
+                  </button>
+                  <button 
+                    onClick={() => setLabPreference('basic')} 
+                    className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${labPreference === 'basic' ? 'bg-slate-200 border-slate-300 text-slate-800 shadow-inner' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                  >
+                    Essential
+                  </button>
                 </div>
             </div>
           )}
@@ -1142,16 +1187,13 @@ export default function App() {
                 
                 const isBasicLabInComp = !isPuppyBundleActive && !isKittenBundleActive && hasCompLabSelected && itemType === 'basic_lab';
 
-                // Category renaming logic for UI display
                 let displayCategory = item.category;
                 if (itemType === 'exam') displayCategory = 'Required';
                 else if (iconType === 'vaccine') displayCategory = 'Vaccine';
                 else if (iconType === 'prevention') displayCategory = 'Prevention';
 
-                // Prevent declining Exam OR Comprehensive labwork
                 const isUndeniable = itemType === 'exam' || (labPreference === 'comprehensive' && item.category === 'Labwork' && lifeStage !== 'puppy') || iconType === 'prevention';
 
-                // Increased left padding logic for bundle items
                 return (
                   <div key={item.id} className={`group transition-all duration-300 border-l-4 ${isDeclined ? 'opacity-50 grayscale' : ''} ${isIncluded ? 'border-indigo-400 bg-indigo-50/30 pl-10 shadow-inner' : 'border-transparent pl-4 hover:bg-slate-50'}`}>
                     <div className="pr-4 py-4 flex justify-between items-start gap-3">
@@ -1169,7 +1211,6 @@ export default function App() {
                            </div>
                         )}
                         
-                        {/* Hidden tooltip for the checkbox */}
                         {!isUndeniable && (
                           <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-max px-2 py-1 bg-slate-800 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
                             {isDeclined ? "Re-add to Visit" : "Decline Service"}
@@ -1200,7 +1241,7 @@ export default function App() {
                           <div className="text-right pl-2">
                              <div className="flex flex-col items-end">
                                {/* Strikethrough Logic */}
-                               {((item.id === BUNDLE_PUPPY_ID || item.id === BUNDLE_KITTEN_ID) && !isDeclined || (item.id !== BUNDLE_ITEM_ID && item.id !== BUNDLE_PUPPY_ID && item.id !== BUNDLE_KITTEN_ID && !isDeclined && (isIncluded || isBasicLabInComp || (isBundleActive && item.itemized_price > item.price)))) && (
+                               {(!isDeclined && item.id !== BUNDLE_ITEM_ID && item.id !== BUNDLE_PUPPY_ID && item.id !== BUNDLE_KITTEN_ID && (isIncluded || isBasicLabInComp || (isBundleActive && !item.isPrevention && item.itemized_price > item.price))) && (
                                  <span className="text-[10px] text-slate-400 line-through italic">${item.itemized_price.toFixed(2)}</span>
                                )}
                                <span className={`font-semibold block ${isIncluded || (isBasicLabInComp && !isDeclined) ? 'text-indigo-600' : 'text-slate-700'}`}>
@@ -1246,7 +1287,6 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* ENHANCED "MORE INFO" BUTTON */}
                         <div className="flex items-center gap-3 mt-3 mb-1">
                           <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200 uppercase tracking-wider">
                             {displayCategory}
@@ -1271,7 +1311,14 @@ export default function App() {
               })
             )}
           </div>
-          <div className="p-4 bg-slate-50 border-t border-slate-200"><p className="text-[10px] text-slate-500 text-center">*Prices are estimates only. Prevention products are calculated separately based on weight.</p></div>
+          
+          {/* Prices Disclaimer & Financing Link */}
+          <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col items-center gap-2">
+             <p className="text-[10px] text-slate-500 text-center">*Prices are estimates only. Prevention products are calculated separately based on weight.</p>
+             <a href="https://bluebonnetah.com/payment-options/" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-800 font-medium underline text-center">
+                Want to explore our 0% interest payment options? Click here
+             </a>
+          </div>
         </section>
 
         {/* --- APP DOWNLOAD BANNER --- */}
