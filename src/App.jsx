@@ -632,7 +632,7 @@ export default function App() {
       // Mid-series Heartworm Screen for older puppies
       if (isPuppySixMonths) {
          const hwItem = services.find(s => s.category === 'Labwork' && s.name.toLowerCase().includes('heartworm') && !s.name.toLowerCase().includes('fecal') && !s.name.toLowerCase().includes('parasite') && getMatchesSpecies(s, species));
-         if (hwItem) recs.push({ ...hwItem, isLabVariant: false }); 
+         if (hwItem) recs.push({ ...hwItem, isLabVariant: false, isExtraPuppyHW: true }); 
       }
 
       // Hardcoded Single Dose Prevention logic
@@ -793,13 +793,13 @@ export default function App() {
             const isPuppyComponent = isPuppyBundleActive && ['exam', 'puppy_vax', 'basic_lab'].includes(type);
             const isKittenComponent = isKittenBundleActive && ['exam', 'kitten_vax', 'basic_lab'].includes(type);
             
-            const isIncludedComponent = isCoreComponent || isPuppyComponent || isKittenComponent;
+            const isIncludedComponent = (isCoreComponent || isPuppyComponent || isKittenComponent) && !item.isExtraPuppyHW;
             const isBundleId = item.id === BUNDLE_ITEM_ID || item.id === BUNDLE_PUPPY_ID || item.id === BUNDLE_KITTEN_ID;
 
             if (isIncludedComponent && !isBundleId) {
                 finalTotal += 0;
             } else {
-                finalTotal += (item.price || 0);
+                finalTotal += (item.isExtraPuppyHW ? (item.itemized_price || item.price || 0) : (item.price || 0));
             }
         });
     } else {
@@ -1298,7 +1298,7 @@ export default function App() {
 
                 let isIncluded = false;
                 if (isPuppyBundleActive) {
-                    isIncluded = item.id !== BUNDLE_PUPPY_ID && ['exam', 'puppy_vax', 'basic_lab'].includes(itemType);
+                    isIncluded = item.id !== BUNDLE_PUPPY_ID && ['exam', 'puppy_vax', 'basic_lab'].includes(itemType) && !item.isExtraPuppyHW;
                 } else if (isKittenBundleActive) {
                     isIncluded = item.id !== BUNDLE_KITTEN_ID && ['exam', 'kitten_vax', 'basic_lab'].includes(itemType);
                 } else {
@@ -1370,13 +1370,13 @@ export default function App() {
                           <div className="text-right pl-2">
                              <div className="flex flex-col items-end">
                                {/* Strikethrough Logic */}
-                               {(!isDeclined && item.id !== BUNDLE_ITEM_ID && item.id !== BUNDLE_PUPPY_ID && item.id !== BUNDLE_KITTEN_ID && (isIncluded || isBasicLabInComp || (isBundleActive && !item.isPrevention && !item.isNailTrim && item.itemized_price > item.price))) && (
+                               {(!isDeclined && item.id !== BUNDLE_ITEM_ID && item.id !== BUNDLE_PUPPY_ID && item.id !== BUNDLE_KITTEN_ID && (isIncluded || isBasicLabInComp || (isBundleActive && !item.isPrevention && !item.isNailTrim && !item.isExtraPuppyHW && item.itemized_price > item.price))) && (
                                  <span className="text-[10px] text-slate-400 line-through italic">${item.itemized_price.toFixed(2)}</span>
                                )}
                                <span className={`font-semibold block ${isIncluded || (isBasicLabInComp && !isDeclined) ? 'text-indigo-600' : 'text-slate-700'}`}>
                                  {isIncluded || (isBasicLabInComp && !isDeclined) ? 'Included' : 
                                   ((item.id === BUNDLE_ITEM_ID || item.id === BUNDLE_PUPPY_ID || item.id === BUNDLE_KITTEN_ID) && isDeclined) ? '$0.00' :
-                                  `$${(isBundleActive && !isDeclined && !item.isPrevention && !item.isNailTrim ? item.price : item.itemized_price).toFixed(2)}`}
+                                  `$${(isBundleActive && !isDeclined && !item.isPrevention && !item.isNailTrim && !item.isExtraPuppyHW ? item.price : item.itemized_price).toFixed(2)}`}
                                </span>
                              </div>
                              
