@@ -182,6 +182,15 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     austin: null
   };
 
+  // Single Dose Prevention Override
+  if (id === 'single_dose_prev') return {
+    title: item.name,
+    what: "A single, monthly dose of preventative medication scaled to your pet's current weight.",
+    why: "Because young pets grow rapidly, they cannot be safely sent home with a standard 6-month supply. We provide a single dose to ensure they receive the correct dosage for their exact weight today.",
+    austin: "Central Texas parasites are active year-round. It's critical to start prevention immediately to protect your new family member.",
+    frequency: "One dose given today. (Note: If this is your pet's first visit, the cost of this dose is included in the first puppy/kitten bundle!)"
+  };
+
   // Prevention
   if (cat === 'Prevention') {
     let freqText = "Administered once every month.";
@@ -335,7 +344,17 @@ export default function App() {
 
         if (wellRes.status === 'fulfilled' && wellRes.value.ok) {
           const wellText = await wellRes.value.text();
-          setServices(parseCSV(wellText));
+          let wellData = parseCSV(wellText);
+          
+          // Override the Kitten Bundle Price automatically
+          wellData = wellData.map(item => {
+             if ((item.id || '').toLowerCase() === BUNDLE_KITTEN_ID) {
+                return { ...item, price: 275, itemized_price: 275 };
+             }
+             return item;
+          });
+          
+          setServices(wellData);
         } else {
           throw new Error('Failed to fetch wellness data.');
         }
@@ -440,7 +459,7 @@ export default function App() {
   // --- PREVENTION LOGIC ---
 
   const availablePreventions = useMemo(() => {
-    if (isPrevDeclined || !petWeight || !prevCoverage || !preventionServices.length) return [];
+    if (lifeStage === 'puppy' || isPrevDeclined || !petWeight || !prevCoverage || !preventionServices.length) return [];
     const weight = parseFloat(petWeight);
     if (isNaN(weight) || weight <= 0) return [];
 
@@ -456,12 +475,6 @@ export default function App() {
       const cov = (p.coverage || '').toLowerCase();
       const selCov = prevCoverage.toLowerCase();
       if (cov !== selCov) return false;
-
-      // Puppy exclusion rules for certain long-acting products
-      if (lifeStage === 'puppy') {
-        const n = (p['product name'] || '').toLowerCase();
-        if (n.includes('bravecto') || n.includes('proheart')) return false;
-      }
 
       if (!p[priceKey] || p[priceKey] <= 0 || isNaN(p[priceKey])) return false;
 
@@ -602,6 +615,48 @@ export default function App() {
          const hwItem = services.find(s => s.category === 'Labwork' && s.name.toLowerCase().includes('heartworm') && !s.name.toLowerCase().includes('fecal') && !s.name.toLowerCase().includes('parasite') && getMatchesSpecies(s, species));
          if (hwItem) recs.push({ ...hwItem, isLabVariant: false }); 
       }
+
+      // Hardcoded Single Dose Prevention logic
+      if (petWeight && parseFloat(petWeight) > 0 && !isPrevDeclined) {
+         const w = parseFloat(petWeight);
+         let singleDoseItem = null;
+         
+         if (species === 'dog') {
+            let price = 0, name = '';
+            if (w < 6) { price = 33.65; name = 'Credelio Quattro (3.3-6 lbs)'; }
+            else if (w >= 6 && w < 12) { price = 34.11; name = 'Credelio Quattro (6-12 lbs)'; }
+            else if (w >= 12 && w < 25) { price = 34.68; name = 'Credelio Quattro (12-25 lbs)'; }
+            else { price = 37.54; name = 'Credelio Quattro (25-50 lbs)'; }
+            
+            singleDoseItem = {
+               id: 'single_dose_prev',
+               name: `${name} - Single Dose`,
+               category: 'Prevention',
+               description: 'Included in 1st Puppy Bundle',
+               price: price,
+               itemized_price: price,
+               isPrevention: true,
+               isSingleDose: true
+            };
+         } else if (species === 'cat') {
+            let price = 0, name = '';
+            if (w < 5.6) { price = 28.53; name = 'Revolution Plus (2.8-5.5 lbs)'; }
+            else { price = 32.56; name = 'Revolution Plus (5.6-11 lbs)'; }
+
+            singleDoseItem = {
+               id: 'single_dose_prev',
+               name: `${name} - Single Dose`,
+               category: 'Prevention',
+               description: 'Included in 1st Kitten Bundle',
+               price: price,
+               itemized_price: price,
+               isPrevention: true,
+               isSingleDose: true
+            };
+         }
+         
+         if (singleDoseItem) recs.push(singleDoseItem);
+      }
       
       const bundleId = species === 'dog' ? BUNDLE_PUPPY_ID : BUNDLE_KITTEN_ID;
       const youngBundle = services.find(s => s.id === bundleId && matchesSpecies(s) && matchesLifeStage(s));
@@ -616,8 +671,8 @@ export default function App() {
     const bundleRow = services.find(s => s.id === BUNDLE_ITEM_ID && matchesSpecies(s) && matchesLifeStage(s));
     if (bundleRow && !isPuppy) recs.push(bundleRow);
 
-    // --- Inject Active Prevention Selection ---
-    if (!isPrevDeclined && activePrevention) {
+    // --- Inject Active Prevention Selection for Adults/Seniors ---
+    if (!isPuppy && !isPrevDeclined && activePrevention) {
       const priceKey = prevSupply === '6-Month' ? '6-month price' : '12-month price';
       const price = activePrevention[priceKey];
       
@@ -659,7 +714,7 @@ export default function App() {
 
       return newItem;
     });
-  }, [species, lifeStage, lifestyle, labPreference, services, loading, error, labVariants, selectedLabId, rabiesVariants, selectedRabiesId, activePrevention, prevSupply, isPrevDeclined, isPuppySixMonths]);
+  }, [species, lifeStage, lifestyle, labPreference, services, loading, error, labVariants, selectedLabId, rabiesVariants, selectedRabiesId, activePrevention, prevSupply, isPrevDeclined, isPuppySixMonths, petWeight]);
 
   const { totalItemizedValue, displayTotal, activeBundle } = useMemo(() => {
     const acceptedItems = recommendations.filter(item => !declinedItems.includes(item.id));
@@ -914,10 +969,10 @@ export default function App() {
         <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 transition-all duration-300">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
-              <ShieldCheck size={20} className="text-blue-500"/> 2. Prevention (Optional)
+              <ShieldCheck size={20} className="text-blue-500"/> 2. Prevention {lifeStage !== 'puppy' ? '(Optional)' : ''}
             </h2>
             
-            {!isPrevDeclined && petWeight && (
+            {!isPrevDeclined && petWeight && lifeStage !== 'puppy' && (
               <button 
                 onClick={() => {
                    setIsPrevDeclined(true);
@@ -932,7 +987,7 @@ export default function App() {
             )}
           </div>
           
-          {isPrevDeclined ? (
+          {isPrevDeclined && lifeStage !== 'puppy' ? (
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center animate-in fade-in">
                <div className="flex items-center gap-3">
                  <Square size={20} className="text-slate-400 shrink-0" />
@@ -966,7 +1021,7 @@ export default function App() {
                 )}
               </div>
 
-              {petWeight && parseFloat(petWeight) > 0 && (
+              {petWeight && parseFloat(petWeight) > 0 && lifeStage !== 'puppy' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
                   
                   {/* Coverage Needed */}
@@ -1068,7 +1123,6 @@ export default function App() {
                       <Info className="text-orange-500 shrink-0 mt-0.5" size={18} />
                       <p className="text-sm text-orange-800 leading-relaxed">
                         No matching products were found for a {species} weighing {petWeight} lbs requiring {prevCoverage} coverage for a {prevSupply} supply.
-                        {lifeStage === 'puppy' && " Note: Certain long-acting products are restricted for puppies."}
                       </p>
                     </div>
                   )}
@@ -1079,7 +1133,7 @@ export default function App() {
           )}
         </section>
 
-        {!(species === 'cat' && lifeStage === 'puppy') && (
+        {/* --- 3. LIFESTYLE & RISK SECTION --- */}
         <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
           <h2 className="text-lg font-semibold mb-4 text-slate-700 flex items-center gap-2"><ShieldAlert size={20} className="text-blue-500"/> 3. Lifestyle & Risk</h2>
           
@@ -1129,7 +1183,6 @@ export default function App() {
             </div>
           )}
         </section>
-        )}
 
         <section className="bg-white rounded-xl shadow-lg border border-blue-100 overflow-hidden">
           <div className="bg-slate-800 text-white p-4 sticky top-0 z-10 shadow-sm">
@@ -1237,10 +1290,15 @@ export default function App() {
                                  <Check size={10} /> {(isIncluded) ? 'Included in Bundle' : 'Included with Panel'}
                                </div>
                              )}
+                             {item.isSingleDose && !isDeclined && (
+                               <div className="text-[10px] text-indigo-600 font-bold mt-1 leading-tight max-w-[90%]">
+                                  *Note: If this is your pet's 1st bundle visit, this price is included in the bundle.
+                               </div>
+                             )}
                           </div>
                           <div className="text-right pl-2">
                              <div className="flex flex-col items-end">
-                               {/* Strikethrough Logic */}
+                               {/* Strikethrough Logic - Removed for Puppy/Kitten Bundles */}
                                {(!isDeclined && item.id !== BUNDLE_ITEM_ID && item.id !== BUNDLE_PUPPY_ID && item.id !== BUNDLE_KITTEN_ID && (isIncluded || isBasicLabInComp || (isBundleActive && !item.isPrevention && item.itemized_price > item.price))) && (
                                  <span className="text-[10px] text-slate-400 line-through italic">${item.itemized_price.toFixed(2)}</span>
                                )}
