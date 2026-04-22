@@ -188,7 +188,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A single, monthly dose of preventative medication scaled to your pet's current weight. Both Credelio Quattro and Revolution Plus offer comprehensive, all-in-one protection against Heartworms, Fleas, Ticks, and common Intestinal Parasites.",
     why: "Because young pets grow rapidly, they cannot be safely sent home with a standard 6-month supply. We provide a single dose to ensure they receive the correct dosage for their exact weight today.",
     austin: "Central Texas parasites are active year-round. It's critical to start prevention immediately to protect your new family member.",
-    frequency: "One dose given today. (Note: If this is your pet's first visit, the cost of this dose is included in the first puppy/kitten bundle!)"
+    frequency: "One dose given today. (Note: If this is your pet's first visit, the cost of this dose is included in the first bundle!)"
   };
 
   // Prevention
