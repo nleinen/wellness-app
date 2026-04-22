@@ -109,7 +109,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A core vaccine against a bacterial infection spread through the urine of wildlife (like raccoons, opossums, or rodents) often found in soil or standing water.",
     why: "Leptospirosis can cause life-threatening kidney or liver failure. It is also 'zoonotic,' meaning humans can contract the disease from their infected pets.",
     austin: "Extremely critical in Austin. Dogs easily contract Lepto by drinking from puddles, swimming in Lady Bird Lake or local creeks, or just sniffing areas where urban wildlife frequently travel in backyards.",
-    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later)."
+    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later. The additional booster of the vaccine is an additional cost of $55)."
   };
 
   // Canine Influenza
@@ -118,7 +118,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A vaccine that protects against the highly contagious 'dog flu' (H3N8 and H3N2 strains).",
     why: "Influenza is a social disease spread through respiratory droplets. It can cause severe coughing, fever, and in some cases, life-threatening pneumonia.",
     austin: "Flu outbreaks happen frequently in high-density social areas. If your dog visits Austin boarding facilities, groomers, or crowded dog parks, this is highly recommended.",
-    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later)."
+    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later. The additional booster of the vaccine is an additional cost of $55)."
   };
 
   // RCP / FVRCP
@@ -136,7 +136,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A vaccine that protects against Feline Leukemia, a virus that weakens a cat's immune system and can cause cancer or severe anemia.",
     why: "FeLV is spread through close contact, such as grooming, biting, or sharing water bowls. Vaccination is highly recommended for all kittens and any adult cat with outdoor access.",
     austin: "Austin has a very large free-roaming and community cat population. If your cat ever steps onto the patio or back yard, they are at risk of encountering an infected stray.",
-    frequency: lifeStage === 'puppy' ? "Two doses are given 3-4 weeks apart, then every 1-2 years based on lifestyle." : "Every 1-2 years based on lifestyle (Unless it is the first time given, in which case it is boosted 4 weeks later)."
+    frequency: lifeStage === 'puppy' ? "Two doses are given 3-4 weeks apart (the additional booster of the vaccine is an additional cost of $55), then every 1-2 years based on lifestyle." : "Every 1-2 years based on lifestyle (Unless it is the first time given, in which case it is boosted 4 weeks later. The additional booster of the vaccine is an additional cost of $55)."
   };
 
   // Heartworm Combo Lab
@@ -185,7 +185,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
   // Single Dose Prevention Override
   if (id === 'single_dose_prev') return {
     title: item.name,
-    what: "A single, monthly dose of preventative medication scaled to your pet's current weight.",
+    what: "A single, monthly dose of preventative medication scaled to your pet's current weight. Both Credelio Quattro and Revolution Plus offer comprehensive, all-in-one protection against Heartworms, Fleas, Ticks, and common Intestinal Parasites.",
     why: "Because young pets grow rapidly, they cannot be safely sent home with a standard 6-month supply. We provide a single dose to ensure they receive the correct dosage for their exact weight today.",
     austin: "Central Texas parasites are active year-round. It's critical to start prevention immediately to protect your new family member.",
     frequency: "One dose given today. (Note: If this is your pet's first visit, the cost of this dose is included in the first puppy/kitten bundle!)"
@@ -211,6 +211,15 @@ const getEnhancedInfo = (item, species, lifeStage) => {
       frequency: item.description || freqText
     };
   }
+
+  // Nail Trims
+  if (id.includes('nail_trim') || name.includes('nail trim')) return {
+    title: item.name,
+    what: name.includes('dremel') ? "A professional trimming of your pet's nails, followed by filing with a Dremel tool to smooth rough edges." : "A professional trimming of your pet's nails using standard clippers.",
+    why: "Keeping nails short is essential for your pet's joint health, traction, and comfort. Overgrown nails can alter their gait and cause pain.",
+    austin: null,
+    frequency: "As needed, typically every 4-8 weeks."
+  };
 
   // Fallback
   return {
@@ -290,6 +299,7 @@ const getIconType = (item) => {
   if (cat.includes('lab') || name.includes('test') || name.includes('panel')) return 'lab';
   if (name.includes('exam') || name.includes('consult')) return 'exam';
   if (cat.includes('prevention')) return 'prevention';
+  if (name.includes('nail')) return 'nail';
   return 'vaccine';
 };
 
@@ -309,6 +319,7 @@ export default function App() {
   });
   const [labPreference, setLabPreference] = useState('comprehensive'); 
   const [isPuppySixMonths, setIsPuppySixMonths] = useState(false);
+  const [nailTrim, setNailTrim] = useState('none');
   
   // Prevention States
   const [petWeight, setPetWeight] = useState('');
@@ -387,10 +398,12 @@ export default function App() {
     setIsPrevDeclined(false); 
   }, [species]);
 
-  // Reset puppy 6 month check if life stage changes
+  // Reset puppy 6 month check & nail trim if life stage changes
   useEffect(() => {
     if (lifeStage !== 'puppy') {
       setIsPuppySixMonths(false);
+    } else {
+      setNailTrim('none');
     }
   }, [lifeStage]);
 
@@ -475,6 +488,12 @@ export default function App() {
       const cov = (p.coverage || '').toLowerCase();
       const selCov = prevCoverage.toLowerCase();
       if (cov !== selCov) return false;
+
+      // Puppy exclusion rules for certain long-acting products
+      if (lifeStage === 'puppy') {
+        const n = (p['product name'] || '').toLowerCase();
+        if (n.includes('bravecto') || n.includes('proheart')) return false;
+      }
 
       if (!p[priceKey] || p[priceKey] <= 0 || isNaN(p[priceKey])) return false;
 
@@ -630,7 +649,7 @@ export default function App() {
             
             singleDoseItem = {
                id: 'single_dose_prev',
-               name: `${name} - Single Dose`,
+               name: `${name} - Single Dose (Heartworm, Flea, Tick & Parasites)`,
                category: 'Prevention',
                description: 'Included in 1st Puppy Bundle',
                price: price,
@@ -645,7 +664,7 @@ export default function App() {
 
             singleDoseItem = {
                id: 'single_dose_prev',
-               name: `${name} - Single Dose`,
+               name: `${name} - Single Dose (Heartworm, Flea, Tick & Parasites)`,
                category: 'Prevention',
                description: 'Included in 1st Kitten Bundle',
                price: price,
@@ -694,6 +713,19 @@ export default function App() {
       });
     }
 
+    // --- Inject Nail Trim ---
+    if (!isPuppy && nailTrim !== 'none') {
+        recs.push({
+            id: nailTrim === 'standard' ? 'nail_trim_standard' : 'nail_trim_dremel',
+            name: nailTrim === 'standard' ? 'Nail Trim' : 'Nail Trim (Dremel)',
+            category: 'Additional Services',
+            description: nailTrim === 'standard' ? 'Standard nail trim' : 'Nail trim with Dremel smoothing',
+            price: nailTrim === 'standard' ? 36 : 50,
+            itemized_price: nailTrim === 'standard' ? 36 : 50,
+            isNailTrim: true
+        });
+    }
+
     const uniqueRecs = [...new Map(recs.map(item => [item.id || item.name, item])).values()];
     const comprehensiveIds = ['lab_adultk9', 'lab_adultfe', 'lab_seniork9', 'lab_seniorfe'];
     const standaloneIds = ['lab_hw-pcr', 'lab_hw', 'lab_pcr'];
@@ -714,7 +746,7 @@ export default function App() {
 
       return newItem;
     });
-  }, [species, lifeStage, lifestyle, labPreference, services, loading, error, labVariants, selectedLabId, rabiesVariants, selectedRabiesId, activePrevention, prevSupply, isPrevDeclined, isPuppySixMonths, petWeight]);
+  }, [species, lifeStage, lifestyle, labPreference, services, loading, error, labVariants, selectedLabId, rabiesVariants, selectedRabiesId, activePrevention, prevSupply, isPrevDeclined, isPuppySixMonths, petWeight, nailTrim]);
 
   const { totalItemizedValue, displayTotal, activeBundle } = useMemo(() => {
     const acceptedItems = recommendations.filter(item => !declinedItems.includes(item.id));
@@ -824,6 +856,7 @@ export default function App() {
     if (mItemType === 'exam') modalDisplayCategory = 'Required';
     else if (mIconType === 'vaccine') modalDisplayCategory = 'Vaccine';
     else if (mIconType === 'prevention') modalDisplayCategory = 'Prevention';
+    else if (mIconType === 'nail') modalDisplayCategory = 'Grooming';
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
@@ -979,6 +1012,7 @@ export default function App() {
                    setPetWeight('');
                    setSelectedPrevProductName('');
                    setIsEconomicalSelected(false);
+                   setNailTrim('none');
                 }}
                 className="text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
               >
@@ -1090,14 +1124,22 @@ export default function App() {
                       </button>
 
                       {availablePreventions.map(p => {
-                          const isSelected = !isEconomicalSelected && selectedPrevProductName === p['product name'];
+                          const isThisTheEconomicalOne = availablePreventions.reduce((minItem, currentItem) => {
+                            const pk = prevSupply === '6-Month' ? '6-month price' : '12-month price';
+                            return currentItem[pk] < minItem[pk] ? currentItem : minItem;
+                          }, availablePreventions[0])['product name'] === p['product name'];
+                          
+                          const isExplicitlySelected = !isEconomicalSelected && selectedPrevProductName === p['product name'];
+                          const isAutoSelectedByEco = isEconomicalSelected && isThisTheEconomicalOne;
+                          const isSelected = isExplicitlySelected || isAutoSelectedByEco;
+
                           const price = p[prevSupply === '6-Month' ? '6-month price' : '12-month price'];
                           
                           return (
                             <button 
                               key={p['product name']}
                               onClick={() => { setIsEconomicalSelected(false); setSelectedPrevProductName(p['product name']); }}
-                              className={`w-full text-left p-3 border rounded-xl flex items-center justify-between transition-all ${isSelected ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' : 'bg-white border-slate-200 hover:border-blue-300'}`}
+                              className={`w-full text-left p-3 border rounded-xl flex items-center justify-between transition-all ${isSelected ? (isAutoSelectedByEco ? 'bg-green-50 border-green-500 ring-1 ring-green-500' : 'bg-blue-50 border-blue-500 ring-1 ring-blue-500') : 'bg-white border-slate-200 hover:border-slate-300'}`}
                             >
                               <div className="pr-4">
                                 <div className="font-bold text-slate-800">{p['product name']}</div>
@@ -1108,7 +1150,7 @@ export default function App() {
                               </div>
                               <div className="flex items-center gap-4 shrink-0">
                                   <div className="font-semibold text-slate-700">${price.toFixed(2)}</div>
-                                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
+                                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? (isAutoSelectedByEco ? 'bg-green-500 border-green-500' : 'bg-blue-600 border-blue-600') : 'border-slate-300'}`}>
                                     {isSelected && <Check size={12} className="text-white"/>}
                                   </div>
                               </div>
@@ -1133,9 +1175,9 @@ export default function App() {
           )}
         </section>
 
-        {/* --- 3. LIFESTYLE & RISK SECTION --- */}
+        {!(species === 'cat' && lifeStage === 'puppy') && (
         <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h2 className="text-lg font-semibold mb-4 text-slate-700 flex items-center gap-2"><ShieldAlert size={20} className="text-blue-500"/> 3. Lifestyle & Risk</h2>
+          <h2 className="text-lg font-semibold mb-4 text-slate-700 flex items-center gap-2"><ShieldAlert size={20} className="text-blue-500"/> 3. Lifestyle, Risk & Additional Services</h2>
           
           {lifeStage === 'puppy' && species === 'dog' && (
             <div className="mb-4 pb-4 border-b border-slate-100">
@@ -1164,25 +1206,52 @@ export default function App() {
             )}
           </div>
           {lifeStage !== 'puppy' && (
-            <div className="mt-6 pt-6 border-t border-slate-100">
-                <h3 className="text-sm font-semibold mb-3">Labwork Preference</h3>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setLabPreference('comprehensive')} 
-                    className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${labPreference === 'comprehensive' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'}`}
-                  >
-                    Best Medicine (Recommended)
-                  </button>
-                  <button 
-                    onClick={() => setLabPreference('basic')} 
-                    className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${labPreference === 'basic' ? 'bg-slate-200 border-slate-300 text-slate-800 shadow-inner' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                  >
-                    Essential
-                  </button>
-                </div>
-            </div>
+            <>
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                  <h3 className="text-sm font-semibold mb-3">Labwork Preference</h3>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setLabPreference('comprehensive')} 
+                      className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${labPreference === 'comprehensive' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'}`}
+                    >
+                      Best Medicine (Recommended)
+                    </button>
+                    <button 
+                      onClick={() => setLabPreference('basic')} 
+                      className={`flex-1 px-3 py-2 text-sm border rounded-lg font-medium transition-colors ${labPreference === 'basic' ? 'bg-slate-200 border-slate-300 text-slate-800 shadow-inner' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                    >
+                      Essential
+                    </button>
+                  </div>
+              </div>
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                  <h3 className="text-sm font-semibold mb-3">Additional Services</h3>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Would you like a nail trim performed?</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button 
+                      onClick={() => setNailTrim('none')} 
+                      className={`px-3 py-2.5 text-sm border rounded-lg font-medium transition-colors ${nailTrim === 'none' ? 'bg-slate-200 border-slate-300 text-slate-800 shadow-inner' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                    >
+                      No Thanks
+                    </button>
+                    <button 
+                      onClick={() => setNailTrim('standard')} 
+                      className={`px-3 py-2.5 text-sm border rounded-lg font-medium transition-colors ${nailTrim === 'standard' ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                    >
+                      Standard ($36)
+                    </button>
+                    <button 
+                      onClick={() => setNailTrim('dremel')} 
+                      className={`px-3 py-2.5 text-sm border rounded-lg font-medium transition-colors ${nailTrim === 'dremel' ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                    >
+                      Dremel ($50)
+                    </button>
+                  </div>
+              </div>
+            </>
           )}
         </section>
+        )}
 
         <section className="bg-white rounded-xl shadow-lg border border-blue-100 overflow-hidden">
           <div className="bg-slate-800 text-white p-4 sticky top-0 z-10 shadow-sm">
@@ -1244,6 +1313,7 @@ export default function App() {
                 if (itemType === 'exam') displayCategory = 'Required';
                 else if (iconType === 'vaccine') displayCategory = 'Vaccine';
                 else if (iconType === 'prevention') displayCategory = 'Prevention';
+                else if (iconType === 'nail') displayCategory = 'Grooming';
 
                 const isUndeniable = itemType === 'exam' || (labPreference === 'comprehensive' && item.category === 'Labwork' && lifeStage !== 'puppy') || iconType === 'prevention';
 
@@ -1277,6 +1347,7 @@ export default function App() {
                         {iconType === 'lab' && <Activity size={18} />}
                         {iconType === 'exam' && <Heart size={18} />}
                         {iconType === 'prevention' && <ShieldCheck size={18} />}
+                        {iconType === 'nail' && <PawPrint size={18} />}
                       </div>
                       
                       <div className="flex-1">
@@ -1292,20 +1363,20 @@ export default function App() {
                              )}
                              {item.isSingleDose && !isDeclined && (
                                <div className="text-[10px] text-indigo-600 font-bold mt-1 leading-tight max-w-[90%]">
-                                  *Note: If this is your pet's 1st bundle visit, this price is included in the bundle.
+                                  *Note: If this is your pet's 1st visit, this price is included in the bundle.
                                </div>
                              )}
                           </div>
                           <div className="text-right pl-2">
                              <div className="flex flex-col items-end">
-                               {/* Strikethrough Logic - Removed for Puppy/Kitten Bundles */}
-                               {(!isDeclined && item.id !== BUNDLE_ITEM_ID && item.id !== BUNDLE_PUPPY_ID && item.id !== BUNDLE_KITTEN_ID && (isIncluded || isBasicLabInComp || (isBundleActive && !item.isPrevention && item.itemized_price > item.price))) && (
+                               {/* Strikethrough Logic */}
+                               {(!isDeclined && item.id !== BUNDLE_ITEM_ID && item.id !== BUNDLE_PUPPY_ID && item.id !== BUNDLE_KITTEN_ID && (isIncluded || isBasicLabInComp || (isBundleActive && !item.isPrevention && !item.isNailTrim && item.itemized_price > item.price))) && (
                                  <span className="text-[10px] text-slate-400 line-through italic">${item.itemized_price.toFixed(2)}</span>
                                )}
                                <span className={`font-semibold block ${isIncluded || (isBasicLabInComp && !isDeclined) ? 'text-indigo-600' : 'text-slate-700'}`}>
                                  {isIncluded || (isBasicLabInComp && !isDeclined) ? 'Included' : 
                                   ((item.id === BUNDLE_ITEM_ID || item.id === BUNDLE_PUPPY_ID || item.id === BUNDLE_KITTEN_ID) && isDeclined) ? '$0.00' :
-                                  `$${(isBundleActive && !isDeclined && !item.isPrevention ? item.price : item.itemized_price).toFixed(2)}`}
+                                  `$${(isBundleActive && !isDeclined && !item.isPrevention && !item.isNailTrim ? item.price : item.itemized_price).toFixed(2)}`}
                                </span>
                              </div>
                              
