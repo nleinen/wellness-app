@@ -118,7 +118,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A vaccine that protects against the highly contagious 'dog flu' (H3N8 and H3N2 strains).",
     why: "Influenza is a social disease spread through respiratory droplets. It can cause severe coughing, fever, and in some cases, life-threatening pneumonia.",
     austin: "Flu outbreaks happen frequently in high-density social areas. If your dog visits Austin boarding facilities, groomers, or crowded dog parks, this is highly recommended.",
-    frequency: "Annually after initial 2 booster series 4 weeks apart."
+    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later)."
   };
 
   // RCP / FVRCP
