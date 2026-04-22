@@ -55,16 +55,16 @@ const getEnhancedInfo = (item, species, lifeStage) => {
   // Bundles
   if (id.includes('bundle')) return {
     title: item.name,
-    what: "Discounted, all-inclusive packages designed to provide young pets with their full series of exams, core vaccinations, and essential diagnostic screenings.",
+    what: "Discounted, all-inclusive packages designed to provide young and senior pets with their full series of exams, core vaccinations, and essential diagnostic screenings.",
     why: "Bundling these services ensures your pet stays on a strict medical schedule during their most vulnerable developmental stage while providing you with significant savings.",
-    austin: "Central Texas has a high exposure rate for infectious diseases due to our year-round outdoor lifestyle. Establishing strong immunity early is the best way to protect your new family member before they hit the trails or parks."
+    austin: "Central Texas has a high exposure rate for infectious diseases due to our year-round outdoor lifestyle. Establishing strong immunity is the best way to protect your new family member before they hit the trails or parks."
   };
 
   // Exams
   if (name.includes('exam') || name.includes('consult')) return {
     title: item.name,
     what: "A comprehensive 'nose-to-tail' physical assessment conducted by a veterinarian.",
-    why: "Because pets age much faster than humans, an annual (or bi-annual) exam is critical for detecting early signs of disease—such as dental issues, heart murmurs, or new growths—that may not be visible at home.",
+    why: "Because pets age much faster than humans, an annual (or bi-annual) exam is critical for detecting early signs of disease-such as dental issues, heart murmurs, or new growths-that may not be visible at home.",
     austin: species === 'cat' 
       ? "Since cats are notorious for hiding subtle symptoms of disease, the regular exam can allow immediate intervention if abnormal changes occur."
       : "Keeping a close eye on your pet's health is crucial in Austin, where the intense summer heat and active outdoor lifestyle put extra physical demands on their bodies."
@@ -76,7 +76,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A core vaccine that protects against three major viral diseases: Distemper, Adenovirus (Hepatitis), and Parvovirus.",
     why: "These diseases are highly contagious and can be fatal, especially Parvovirus, which survives in the environment for long periods. This vaccine is essential for every dog regardless of lifestyle.",
     austin: "With Austin's massive dog park culture and popular trails (like the Barton Creek Greenbelt), your dog has a high chance of encountering contaminated soil where Parvovirus thrives.",
-    frequency: lifeStage === 'puppy' ? "Every 3-4 weeks until >16 weeks, then at the first annual appointment, then every 3 years thereafter." : "Every 3 years."
+    frequency: lifeStage === 'puppy' ? "Every 3-4 weeks until >16 weeks, then at the first annual appointment, then every 3 years thereafter." : "Every 3 years, if boosted on schedule."
   };
 
   // Rabies
@@ -84,7 +84,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     title: item.name,
     what: name.includes('purevax') ? "A specialized, non-adjuvanted vaccine designed specifically for the safety of cats to prevent Rabies." : "A vaccine that protects against the Rabies virus, which affects the central nervous system.",
     why: "Rabies is 100% fatal to pets and can be transmitted to humans. Vaccination is not only a top health priority but is strictly required by state and local law.",
-    austin: "Central Texas and the Hill Country have very high populations of bats, skunks, and raccoons—the primary carriers of Rabies. Even indoor-only pets are at risk if a bat accidentally enters the home (a common occurrence in Austin).",
+    austin: "Central Texas and the Hill Country have very high populations of bats, skunks, and raccoons-the primary carriers of Rabies. Even indoor-only pets are at risk if a bat accidentally enters the home (a common occurrence in Austin).",
     frequency: species === 'cat' 
       ? (lifeStage === 'puppy' 
           ? "Given after 12wks of age and then at the first annual appointment, then every 1-3 years, depending on the formulation of the vaccine given (available in 1yr and 3yr formulations)." 
@@ -100,7 +100,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "Often called the 'Kennel Cough' vaccine, it protects against the most common bacterial cause of infectious tracheobronchitis.",
     why: "It prevents harsh, hacking coughs and respiratory infections. This is a core vaccine at our practice, essential for dogs that interact with others.",
     austin: "An absolute must for Austin's dog-friendly patios, breweries, and busy daycare facilities where respiratory bugs spread rapidly through the air.",
-    frequency: "Intranasal vaccine given every 1 year."
+    frequency: "Intranasal vaccine given every year."
   };
 
   // Leptospirosis
@@ -109,7 +109,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
     what: "A core vaccine against a bacterial infection spread through the urine of wildlife (like raccoons, opossums, or rodents) often found in soil or standing water.",
     why: "Leptospirosis can cause life-threatening kidney or liver failure. It is also 'zoonotic,' meaning humans can contract the disease from their infected pets.",
     austin: "Extremely critical in Austin. Dogs easily contract Lepto by drinking from puddles, swimming in Lady Bird Lake or local creeks, or just sniffing areas where urban wildlife frequently travel in backyards.",
-    frequency: "Every 1 year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later)."
+    frequency: "Every year for adult and senior dogs (If a puppy, first time receiving the vaccine, or if the vaccine has lapsed more than 15 months, it must be boosted 4 weeks later)."
   };
 
   // Canine Influenza
@@ -143,7 +143,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
   if ((name.includes('combo') || name.includes('heartworm')) && cat === 'Labwork') return {
     title: item.name,
     what: "A blood test combined with a fecal screen to check for heartworms and common intestinal parasites.",
-    why: "Heartworms are transmitted by mosquitoes and can cause permanent heart and lung damage. To ensure your pet's safety, we utilize advanced PCR technology that is significantly more sensitive than traditional microscopic screens. This DNA-based test can detect common intestinal parasites—such as Giardia, Hookworms, and Roundworms—even when they are 'hidden' and not actively shedding eggs. This ensures your pet is truly clear of infection before continuing their essential monthly prevention.",
+    why: "Heartworms are transmitted by mosquitoes and can cause permanent heart and lung damage. To ensure your pet's safety, we utilize advanced PCR technology that is significantly more sensitive than traditional microscopic screens. This DNA-based test can detect common intestinal parasites such as Giardia, Hookworms, and Roundworms-even when they are 'hidden' and not actively shedding eggs. This ensures your pet is truly clear of infection before continuing their essential monthly prevention.",
     austin: "Because Central Texas rarely gets hard freezes, both mosquitoes and intestinal parasites remain active threats nearly year-round. Heartworm disease is highly endemic to the Austin area, and our popular local parks, dog-friendly patios, and trails are frequent sources of parasitic exposure. Due to this high level of community traffic, using the most sensitive DNA screening available is critical to catch low-level or asymptomatic infections that traditional tests often miss.",
     frequency: "Screened every year."
   };
@@ -178,7 +178,7 @@ const getEnhancedInfo = (item, species, lifeStage) => {
   if (id.includes('senior') && cat === 'Labwork') return {
     title: "Senior Early Detection Screening Labwork",
     what: "Our most comprehensive diagnostic screen, including a Complete Blood Cell Count (CBC), expanded organ chemistries, thyroid (T4) testing, urinalysis, and an intestinal parasite screen.",
-    why: "As pets age, the risk of 'hidden' diseases like kidney disease, hyperthyroidism, or diabetes increases. This panel checks much more than standard screens to catch issues early when they are most manageable.",
+    why: "As pets age, the risk of 'hidden' diseases like kidney/liver disease, thyroid disease, or diabetes increases. This panel checks much more than standard screens to catch issues early when they are most manageable.",
     austin: null
   };
 
@@ -1313,11 +1313,18 @@ export default function App() {
           </div>
           
           {/* Prices Disclaimer & Financing Link */}
-          <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col items-center gap-2">
-             <p className="text-[10px] text-slate-500 text-center">*Prices are estimates only. Prevention products are calculated separately based on weight.</p>
-             <a href="https://bluebonnetah.com/payment-options/" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-800 font-medium underline text-center">
-                Want to explore our 0% interest payment options? Click here
-             </a>
+          <div className="p-5 bg-indigo-50/50 border-t border-indigo-100 flex flex-col items-center gap-3">
+             <div className="bg-white px-4 py-3 rounded-xl shadow-sm border border-indigo-100/50 w-full max-w-sm text-center">
+                 <a href="https://bluebonnetah.com/payment-options/" target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:text-indigo-800 font-bold hover:underline mb-2 block">
+                    Want to explore our 0% interest payment options? Click here
+                 </a>
+                 <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[10px] sm:text-[11px] text-indigo-500 font-medium">
+                    <span className="flex items-center gap-1"><Check size={12} /> Soft credit check</span>
+                    <span className="flex items-center gap-1"><Check size={12} /> Flexible payment options</span>
+                    <span className="flex items-center gap-1"><Check size={12} /> Fast approval</span>
+                 </div>
+             </div>
+             <p className="text-[10px] text-slate-400 text-center mt-1">*Prices are estimates only. Prevention products are calculated separately based on weight.</p>
           </div>
         </section>
 
