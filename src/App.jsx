@@ -52,6 +52,15 @@ const getEnhancedInfo = (item, species, lifeStage) => {
   const id = (item.id || '').toLowerCase();
   const cat = item.category || '';
 
+  // Generic Prevention Info Modal
+  if (id === 'prevention_info') return {
+    title: "Preventative Medication",
+    what: "Veterinary-grade medications designed to protect your pet from dangerous internal and external parasites.",
+    why: "Heartworms, fleas, and ticks transmit severe and sometimes fatal diseases. Consistent, year-round prevention is medically critical and much cheaper than treating an infection once it occurs.",
+    austin: "Because Central Texas rarely experiences hard freezes, mosquitoes, fleas, and ticks remain active threats year-round. Skipping even one month leaves your pet extremely vulnerable.",
+    frequency: "Typically administered once every month, or extended durations (6-12 months) depending on the specific product."
+  };
+
   // Bundles
   if (id.includes('bundle')) return {
     title: item.name,
@@ -629,10 +638,10 @@ export default function App() {
         if (fivItem) recs.push(fivItem);
       }
       
-      // Mid-series Heartworm Screen for older puppies
+      // Mid-series Heartworm Screen for older puppies - EXPLICITLY set to $95
       if (isPuppySixMonths) {
          const hwItem = services.find(s => s.category === 'Labwork' && s.name.toLowerCase().includes('heartworm') && !s.name.toLowerCase().includes('fecal') && !s.name.toLowerCase().includes('parasite') && getMatchesSpecies(s, species));
-         if (hwItem) recs.push({ ...hwItem, isLabVariant: false, isExtraPuppyHW: true }); 
+         if (hwItem) recs.push({ ...hwItem, price: 95, itemized_price: 95, isLabVariant: false, isExtraPuppyHW: true }); 
       }
 
       // Hardcoded Single Dose Prevention logic
@@ -748,7 +757,7 @@ export default function App() {
     });
   }, [species, lifeStage, lifestyle, labPreference, services, loading, error, labVariants, selectedLabId, rabiesVariants, selectedRabiesId, activePrevention, prevSupply, isPrevDeclined, isPuppySixMonths, petWeight, nailTrim]);
 
-  const { totalItemizedValue, displayTotal, activeBundle } = useMemo(() => {
+  const { totalItemizedValue, displayTotal, activeBundle, preventionTotal } = useMemo(() => {
     const acceptedItems = recommendations.filter(item => !declinedItems.includes(item.id));
     
     const hasFullBundle = acceptedItems.some(i => i.id === BUNDLE_ITEM_ID);
@@ -775,12 +784,17 @@ export default function App() {
     }, 0);
 
     let finalTotal = 0;
+    let prevItemsTotal = 0;
+
     if (bundleType === 'basic') {
         finalTotal = BUNDLE_BASIC_PRICE_BASE;
         acceptedItems.forEach(item => {
             const type = getItemType(item);
             if (type !== 'exam' && type !== 'basic_lab') {
                 finalTotal += (item.price || 0);
+            }
+            if (item.isPrevention) {
+                prevItemsTotal += (item.itemized_price || item.price || 0);
             }
         });
     } else if (bundleType === 'full') {
@@ -801,6 +815,10 @@ export default function App() {
             } else {
                 finalTotal += (item.isExtraPuppyHW ? (item.itemized_price || item.price || 0) : (item.price || 0));
             }
+
+            if (item.isPrevention) {
+                prevItemsTotal += (item.itemized_price || item.price || 0);
+            }
         });
     } else {
         acceptedItems.forEach(item => {
@@ -810,15 +828,23 @@ export default function App() {
           } else {
             finalTotal += (item.itemized_price || 0);
           }
+          if (item.isPrevention) {
+             prevItemsTotal += (item.itemized_price || item.price || 0);
+          }
         });
     }
 
     return { 
         totalItemizedValue: itemizedTotal, 
         displayTotal: finalTotal, 
-        activeBundle: bundleType 
+        activeBundle: bundleType,
+        preventionTotal: prevItemsTotal
     };
   }, [recommendations, declinedItems, species, labPreference, lifeStage]);
+
+  // Dynamic values for High/Low estimate display
+  const hasActivePrev = preventionTotal > 0;
+  const displayTotalWithoutPrev = displayTotal - preventionTotal;
 
   useEffect(() => {
     const acceptedIds = recommendations.filter(r => !declinedItems.includes(r.id)).map(r => r.id);
@@ -855,7 +881,7 @@ export default function App() {
     let modalDisplayCategory = modalItem.category;
     if (mItemType === 'exam') modalDisplayCategory = 'Required';
     else if (mIconType === 'vaccine') modalDisplayCategory = 'Vaccine';
-    else if (mIconType === 'prevention') modalDisplayCategory = 'Prevention';
+    else if (mIconType === 'prevention' || modalItem.id === 'prevention_info') modalDisplayCategory = 'Prevention';
     else if (mIconType === 'nail') modalDisplayCategory = 'Grooming';
 
     return (
@@ -996,14 +1022,36 @@ export default function App() {
               </div>
             ))}
           </div>
+
+          {lifeStage === 'puppy' && (
+            <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+               <Info className="text-blue-500 shrink-0 mt-0.5" size={18} />
+               <div className="text-sm text-blue-900 leading-relaxed">
+                 <strong>Important for Young Pets:</strong> Multiple visits are expected throughout their initial vaccine series until they are around 16 weeks of age. This ensures their immune system properly builds antibodies to fight off life-threatening diseases as their mother's natural protection wears off.
+               </div>
+            </div>
+          )}
+
         </section>
 
         {/* --- 2. PREVENTION SECTION --- */}
         <section className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 transition-all duration-300">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
-              <ShieldCheck size={20} className="text-blue-500"/> 2. Prevention {lifeStage !== 'puppy' ? '(Optional)' : ''}
-            </h2>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                <ShieldCheck size={20} className="text-blue-500"/> 
+                <span>2. Prevention {lifeStage !== 'puppy' ? '(Optional)' : ''}</span>
+              </h2>
+              <p className="text-sm text-slate-500 ml-7 mb-2 mt-1">Heartworm and/or flea/tick preventative medication.</p>
+              <div className="ml-7">
+                <button 
+                  onClick={() => setModalItem({ id: 'prevention_info', name: 'Why Prevention is Important', category: 'Prevention' })}
+                  className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1.5"
+                >
+                  <PawPrint size={14} /> Why it's important
+                </button>
+              </div>
+            </div>
             
             {!isPrevDeclined && petWeight && lifeStage !== 'puppy' && (
               <button 
@@ -1014,7 +1062,7 @@ export default function App() {
                    setIsEconomicalSelected(false);
                    setNailTrim('none');
                 }}
-                className="text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+                className="text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 mt-1"
               >
                 <X size={14} /> Decline
               </button>
@@ -1035,7 +1083,7 @@ export default function App() {
                </button>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 pt-2">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
                   <Weight size={16} /> Pet Weight (lbs)
@@ -1258,13 +1306,30 @@ export default function App() {
             <div className="flex justify-between items-center mb-1">
               <h2 className="font-semibold flex items-center gap-2"><Calculator size={18} /> Estimated Visit</h2>
               <div className="text-right">
-                {activeBundle && totalItemizedValue > displayTotal ? (
-                  <>
-                     <div className="text-sm text-slate-400 line-through mr-2 inline-block">${totalItemizedValue.toFixed(2)}</div>
-                     <div className="text-xl font-bold text-green-400 inline-block">${displayTotal.toFixed(2)}</div>
-                  </>
+                {activeBundle && totalItemizedValue > displayTotal && (
+                   <div className="text-sm text-slate-400 line-through mb-0.5 flex justify-end items-center">
+                     {hasActivePrev ? (
+                       <>
+                         ${(totalItemizedValue - preventionTotal).toFixed(2)} <span className="mx-1">-</span> ${(totalItemizedValue).toFixed(2)}
+                       </>
+                     ) : (
+                       <>${totalItemizedValue.toFixed(2)}</>
+                     )}
+                   </div>
+                )}
+                {hasActivePrev ? (
+                   <>
+                     <div className="text-xl font-bold text-white flex justify-end items-center">
+                       <span className="text-green-400">${displayTotalWithoutPrev.toFixed(2)}</span> 
+                       <span className="text-slate-400 font-medium mx-1">-</span> 
+                       <span className="text-green-400">${displayTotal.toFixed(2)}</span>
+                     </div>
+                     <div className="text-[10px] text-slate-300 mt-0.5 text-right">
+                       Price without & with selected prevention
+                     </div>
+                   </>
                 ) : (
-                  <div className="text-xl font-bold">${displayTotal.toFixed(2)}</div>
+                   <div className="text-xl font-bold text-green-400">${displayTotal.toFixed(2)}</div>
                 )}
               </div>
             </div>
